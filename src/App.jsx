@@ -1,13 +1,26 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint } from './store/reducers/values.jsx'
+import HintComponent from './components/HintComponent.jsx';
 
-function App() {
+let App = () => {
+  const dispatch = useDispatch();
   const heat_transfer_status_text = useSelector((state) => state.values.heat_transfer_status_text)
+  const hint_status = useSelector((state) => state.values.show_hint)
+
+  const hintClick = () => {
+    
+    dispatch(toggleHint())
+  }
+
+  const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>
+  console.log(hint_component)
+
   const status = 'Press start'
   return (
     <div className="container-lg mt-3">
       <h1>{heat_transfer_status_text} heat transfer</h1>
+      {hint_component}
       <canvas id="canvas" width={1200} height={500}></canvas>
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column'>
@@ -94,7 +107,7 @@ function App() {
                 <input type='file' className='form-control'></input>
               </div>
               <div className="col">
-                <button className='btn btn-primary'>Hint</button>
+                <button onClick={hintClick} className='btn btn-primary'>{hint_status ? "Hide" : "Hint"}</button>
               </div>
             </div>
           </div>

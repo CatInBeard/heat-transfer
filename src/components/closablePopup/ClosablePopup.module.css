@@ -1,0 +1,7 @@
+.confirm {
+    backdrop-filter: blur(6px);
+}
+.body {
+    max-height: 70vh;
+    overflow: auto;
+}
