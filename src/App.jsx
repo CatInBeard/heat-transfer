@@ -1,26 +1,36 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint, toggleUpload } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
+import UploadComponent from './components/UploadComponent.jsx';
 
 let App = () => {
   const dispatch = useDispatch();
   const heat_transfer_status_text = useSelector((state) => state.values.heat_transfer_status_text)
   const hint_status = useSelector((state) => state.values.show_hint)
+  const upload_status = useSelector((state) => state.values.show_upload)
 
   const hintClick = () => {
-    
     dispatch(toggleHint())
+  }
+  const uploadClick = () => {
+    dispatch(toggleUpload())
+  }
+
+  const confirmUpload = () => {
+    dispatch(toggleUpload())
   }
 
   const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>
-  console.log(hint_component)
+  const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction = {uploadClick}></UploadComponent> : <></>
 
   const status = 'Press start'
   return (
     <div className="container-lg mt-3">
       <h1>{heat_transfer_status_text} heat transfer</h1>
       {hint_component}
+      {upload_component}
       <canvas id="canvas" width={1200} height={500}></canvas>
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column'>
@@ -104,7 +114,11 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className="col">
-                <input type='file' className='form-control'></input>
+                <button onClick={uploadClick} className='btn btn-primary'>
+                  <nobr>
+                    .inp <i className="bi bi-upload "></i>
+                  </nobr>
+                </button>
               </div>
               <div className="col">
                 <button onClick={hintClick} className='btn btn-primary'>{hint_status ? "Hide" : "Hint"}</button>
