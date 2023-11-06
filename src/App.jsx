@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint, toggleUpload } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
 
@@ -10,6 +10,24 @@ let App = () => {
   const heat_transfer_status_text = useSelector((state) => state.values.heat_transfer_status_text)
   const hint_status = useSelector((state) => state.values.show_hint)
   const upload_status = useSelector((state) => state.values.show_upload)
+  const first_block_visibility = useSelector((state) => state.values.first_block_visibility)
+  const second_block_visibility = useSelector((state) => state.values.second_block_visibility)
+  
+
+
+  const toggleFirstBlock = () => {
+    dispatch(toggleFirstBlockVisibility())
+  }
+
+  let firstButton = first_block_visibility ? <button onClick={toggleFirstBlock} className='btn btn-success'><nobr>Show</nobr></button> :
+  <button onClick={toggleFirstBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
+
+  const toggleSecondBlock = () => {
+    dispatch(toggleSecondBlockVisibility())
+  }
+
+  let secondButton = second_block_visibility ? <button onClick={toggleSecondBlock} className='btn btn-success'><nobr>Show</nobr></button> :
+  <button onClick={toggleSecondBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
 
   const hintClick = () => {
     dispatch(toggleHint())
@@ -43,10 +61,7 @@ let App = () => {
                 First block:
               </div>
               <div className="col">
-                <button className='btn btn-success'><nobr>Show</nobr></button>
-              </div>
-              <div className="col">
-                <button className='btn btn-danger'>Hide</button>
+                {firstButton}
               </div>
             </div>
           </div>
@@ -66,10 +81,7 @@ let App = () => {
                 <nobr>Second block:</nobr>
               </div>
               <div className="col">
-                <button className='btn btn-success'><nobr>Show</nobr></button>
-              </div>
-              <div className="col">
-                <button className='btn btn-danger'>Hide</button>
+                {secondButton}
               </div>
             </div>
           </div>
