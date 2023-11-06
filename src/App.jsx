@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
 
@@ -12,7 +12,28 @@ let App = () => {
   const upload_status = useSelector((state) => state.values.show_upload)
   const first_block_visibility = useSelector((state) => state.values.first_block_visibility)
   const second_block_visibility = useSelector((state) => state.values.second_block_visibility)
+  const first_block_termal_conductivity = useSelector((state) => state.values.first_block_termal_conductivity)
+  const second_block_termal_conductivity = useSelector((state) => state.values.second_block_termal_conductivity)
+  const water_temperature = useSelector((state) => state.values.water_temperature)
+  const air_temperature = useSelector((state) => state.values.air_temperature)
   
+
+  const onFirstBlockConductivityChange = (event) => {
+    dispatch(setFirstBlockTermalConductivity( { event: event.target.value } ))
+  };
+
+  const onSecondBlockConductivityChange = (event) => {
+    dispatch(setSecondBlockTermalConductivity( { event: event.target.value } ))
+  };
+
+  const onAirTemperatureChange = (event) => {
+    dispatch(setAirTemperature( { event: event.target.value } ))
+  };
+
+  const onWaterTemperatureChange = (event) => {
+    dispatch(setWaterTemperature( { event: event.target.value } ))
+  };
+
 
 
   const toggleFirstBlock = () => {
@@ -68,7 +89,7 @@ let App = () => {
           <div className='p-2 form-group row'>
             <div className="row">
               <div className="col">
-                <input type='number' className='form-control' name="coefB1" id="coefB1"></input>
+                <input min={0} value={first_block_termal_conductivity} onChange={onFirstBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
               <label for="coefB1">W/mK</label>
@@ -88,7 +109,7 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className="col">
-                <input type='number' className='form-control' name="coefB1" id="coefB1"></input>
+                <input min={0} value={second_block_termal_conductivity} onChange={onSecondBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
               <label for="coefB1">W/mK</label>
@@ -106,7 +127,10 @@ let App = () => {
               <label for="coefB1">Water:</label>
               </div>
               <div className="col">
-                <input type='number' className='form-control' name="coefB1" id="coefB1"></input>
+                <input min={0} value={water_temperature} onChange={onWaterTemperatureChange} type='number' className='form-control'></input>
+              </div>
+              <div className="col">
+                &deg;K
               </div>
             </div>
           </div>
@@ -116,7 +140,10 @@ let App = () => {
               <label for="coefB1">Air:</label>
               </div>
               <div className="col">
-                <input type='number' className='form-control' name="coefB1" id="coefB1"></input>
+                <input min={0} value={air_temperature} type='number' onChange={onAirTemperatureChange} className='form-control'></input>
+              </div>
+              <div className="col">
+                &deg;K
               </div>
             </div>
           </div>
