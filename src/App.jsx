@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
+import style from "./App.module.css"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -70,7 +71,9 @@ let App = () => {
       <h1>{heat_transfer_status_text} heat transfer</h1>
       {hint_component}
       {upload_component}
-      <canvas id="canvas" width={1200} height={500}></canvas>
+      <div className={style.scrollable}>
+        <canvas id="canvas" width={1200} height={500}></canvas>
+      </div>
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column'>
           <div className='p-2'>
@@ -152,14 +155,14 @@ let App = () => {
           <div className='p-2'>Load data</div>
           <div className='p-2 form-group'>
             <div className="row">
-              <div className="col">
+              <div className="col p-1">
                 <button onClick={uploadClick} className='btn btn-primary'>
                   <nobr>
                     .inp <i className="bi bi-upload "></i>
                   </nobr>
                 </button>
               </div>
-              <div className="col">
+              <div className="col p-1">
                 <button onClick={hintClick} className='btn btn-primary'>{hint_status ? "Hide" : "Hint"}</button>
               </div>
             </div>
