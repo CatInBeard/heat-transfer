@@ -20,7 +20,7 @@ let ClosablePopupContainer = ({children,cancelAction, headerText="Warning"}) => 
             <div className={"toast show " + s.confirm} role="alert" aria-live="assertive" aria-atomic="true">
                 <div className="toast-header">
                     <strong className="me-auto">{headerText}</strong>
-                    <button type="button" class="btn-close" aria-label="Close" onClick={cancelAction}></button>
+                    <button type="button" className="btn-close" aria-label="Close" onClick={cancelAction}></button>
                 </div>
                 <div className={"toast-body " + s.body}>
                     {children}
