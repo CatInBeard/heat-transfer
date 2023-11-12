@@ -1,9 +1,10 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature, saveInpData } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
+import { parseInpText } from './inpParse.tsx';
 import style from "./App.module.css"
 
 let App = () => {
@@ -58,8 +59,21 @@ let App = () => {
     dispatch(toggleUpload())
   }
 
-  const confirmUpload = () => {
-    dispatch(toggleUpload())
+  const confirmUpload = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+      var text = e.target.result;
+      }
+      catch(error){
+        alert("Error reading file!");
+        return;
+      }
+      let inpData = parseInpText(text);
+      dispatch(saveInpData({ data: inpData}));
+      dispatch(toggleUpload());
+    };
+    reader.readAsText(file);
   }
 
   const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>

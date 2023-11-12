@@ -41,11 +41,15 @@ const valuesSlice = createSlice({
     toggleSecondBlockVisibility: (state, action) => {
       state.second_block_visibility = !state.second_block_visibility 
     },
+    saveInpData: (state, action) => {
+      state.inpData = action.payload.data
+    },
   },
 })
 
 export const { toggleHint,setHeatTranserStatus, toggleUpload, toggleFirstBlockVisibility,
   toggleSecondBlockVisibility, setFirstBlockTermalConductivity,
-  setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature } = valuesSlice.actions
+  setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature,
+  saveInpData } = valuesSlice.actions
 
 export default valuesSlice.reducer
