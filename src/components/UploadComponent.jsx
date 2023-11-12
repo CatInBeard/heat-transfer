@@ -26,7 +26,7 @@ let UploadComponent = ( {cancelAction, fileType, confirmAction} ) => {
         <ClosablePopupContainer cancelAction={cancelAction} headerText= {"Upload " + fileType + " file" } >
 
             <div className="form-group">
-                <label for='fileinput' className="mb-2">
+                <label htmlFor='fileinput' className="mb-2">
                     {uploadLabel}
                 </label>
                 <input accept=".inp" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
