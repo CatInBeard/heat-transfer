@@ -12,10 +12,15 @@ const valuesSlice = createSlice({
     second_block_termal_conductivity: 0,
     water_temperature: 273.15,
     air_temperature: 273.15,
+    computingStatus: "waiting",
+    inpData: null
   },
   reducers: {
     setHeatTranserStatus: (state, action) => {
       state.heat_transfer_status_text = action.payload.text
+    },
+    setcomputingStatus: (state, action) => {
+      state.computingStatus = action.payload.status
     },
     setFirstBlockTermalConductivity: (state, action) => {
       state.first_block_termal_conductivity = action.payload.value
@@ -50,6 +55,6 @@ const valuesSlice = createSlice({
 export const { toggleHint,setHeatTranserStatus, toggleUpload, toggleFirstBlockVisibility,
   toggleSecondBlockVisibility, setFirstBlockTermalConductivity,
   setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature,
-  saveInpData } = valuesSlice.actions
+  saveInpData, setcomputingStatus } = valuesSlice.actions
 
 export default valuesSlice.reducer

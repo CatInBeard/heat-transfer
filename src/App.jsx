@@ -1,10 +1,14 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility, toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature, saveInpData } from './store/reducers/values.jsx'
+import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility,
+  toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, 
+  setAirTemperature, setWaterTemperature, saveInpData,
+  setcomputingStatus } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
 import { parseInpText } from './inpParse.tsx';
+import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
 
 let App = () => {
@@ -18,7 +22,25 @@ let App = () => {
   const second_block_termal_conductivity = useSelector((state) => state.values.second_block_termal_conductivity)
   const water_temperature = useSelector((state) => state.values.water_temperature)
   const air_temperature = useSelector((state) => state.values.air_temperature)
+  const inpData = useSelector((state) => state.values.inpData)
+  const computingStatus = useSelector((state) => state.values.computingStatus)
   
+
+  const canStartComputing = computingStatus == "ready";
+
+  const statusData = inpData ?
+  <div className='p-2'>
+    <div className="row">
+      <div className="col p-1">
+        Job name: {inpData.heading.jobName}
+      </div>
+    </div>
+    <div className="row">
+      <div className="col p-1">
+        Model name: {inpData.heading.modelName}
+      </div>
+    </div>
+  </div> : <></>;
 
   const onFirstBlockConductivityChange = (event) => {
     dispatch(setFirstBlockTermalConductivity( { event: event.target.value } ))
@@ -70,10 +92,12 @@ let App = () => {
         return;
       }
       let inpData = parseInpText(text);
+      console.log(inpData);
       dispatch(saveInpData({ data: inpData}));
       dispatch(toggleUpload());
     };
     reader.readAsText(file);
+    dispatch(setcomputingStatus({status: "ready"}))
   }
 
   const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>
@@ -109,7 +133,7 @@ let App = () => {
                 <input min={0} value={first_block_termal_conductivity} onChange={onFirstBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
-              <label for="coefB1">W/mK</label>
+              <label>W/mK</label>
               </div>
             </div>
           </div>
@@ -129,7 +153,7 @@ let App = () => {
                 <input min={0} value={second_block_termal_conductivity} onChange={onSecondBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
-              <label for="coefB1">W/mK</label>
+              <label>W/mK</label>
               </div>
             </div>
           </div>
@@ -141,7 +165,7 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className='col'>
-              <label for="coefB1">Water:</label>
+              <label>Water:</label>
               </div>
               <div className="col">
                 <input min={0} value={water_temperature} onChange={onWaterTemperatureChange} type='number' className='form-control'></input>
@@ -154,7 +178,7 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className='col'>
-              <label for="coefB1">Air:</label>
+              <label>Air:</label>
               </div>
               <div className="col">
                 <input min={0} value={air_temperature} type='number' onChange={onAirTemperatureChange} className='form-control'></input>
@@ -167,7 +191,7 @@ let App = () => {
         </div>
         <div className='p-2 d-flex flex-column'>
           <div className='p-2'>Load data</div>
-          <div className='p-2 form-group'>
+          <div className='p-2'>
             <div className="row">
               <div className="col p-1">
                 <button onClick={uploadClick} className='btn btn-primary'>
@@ -181,9 +205,10 @@ let App = () => {
               </div>
             </div>
           </div>
-          <div className='p-2'>Status: <b>{status}</b></div>
+          <div className='p-2'>Status: <b>{getStatusText(computingStatus)}</b></div>
+          {statusData}
           <div className='p-2'>
-            <button className='btn btn-lg btn-primary'>Start</button>  
+            <button disabled={!canStartComputing} className='btn btn-lg btn-primary'>Start</button>  
           </div>
         </div>
         

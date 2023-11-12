@@ -9,13 +9,18 @@ const parseInpText = (inpTextData: string) => {
 
     let inpData = [];
 
-    let inpDataLines: Array<string> = inpTextData.split("\n");
+    let inpDataLines: Array<string> = clearCR(inpTextData).split("\n");
 
     inpData["heading"] = getHeadings(inpDataLines);
 
 
 
+
     return inpData;
+}
+
+const clearCR = (text: string) : string => {
+    return text.replace(/\r/g, "");
 }
 
 const getHeadings = (inpDataLines: Array<string>) => {
