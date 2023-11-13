@@ -82,6 +82,7 @@ let App = () => {
   }
 
   const confirmUpload = (file) => {
+    dispatch(setcomputingStatus({status: "loading"}))
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -89,15 +90,22 @@ let App = () => {
       }
       catch(error){
         alert("Error reading file!");
+        dispatch(setcomputingStatus({status: "waiting"}))
         return;
       }
-      let inpData = parseInpText(text);
-      console.log(inpData);
-      dispatch(saveInpData({ data: inpData}));
+      try {
+        let inpData = parseInpText(text);
+        console.log(inpData);
+        dispatch(saveInpData({ data: inpData}));
+        dispatch(setcomputingStatus({status: "ready"}))
+      }
+      catch(error){
+        alert("Error parsing file: \n" + error);
+        dispatch(setcomputingStatus({status: "waiting"}))
+      }
       dispatch(toggleUpload());
     };
     reader.readAsText(file);
-    dispatch(setcomputingStatus({status: "ready"}))
   }
 
   const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>
