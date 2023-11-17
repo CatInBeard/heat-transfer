@@ -1,15 +1,19 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility,
-  toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity, 
+import { useState } from "react";
+import {
+  setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility,
+  toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity,
   setAirTemperature, setWaterTemperature, saveInpData,
-  setcomputingStatus } from './store/reducers/values.jsx'
+  setcomputingStatus
+} from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
 import { parseInpText } from './inpParse.tsx';
 import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
+import ErrorPopup from "./components/ErrorPopup.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -24,38 +28,40 @@ let App = () => {
   const air_temperature = useSelector((state) => state.values.air_temperature)
   const inpData = useSelector((state) => state.values.inpData)
   const computingStatus = useSelector((state) => state.values.computingStatus)
-  
+
+  const [errorPopup, setErrorPopup] = useState(null);
+
 
   const canStartComputing = computingStatus == "ready";
 
   const statusData = inpData ?
-  <div className='p-2'>
-    <div className="row">
-      <div className="col p-1">
-        Job name: {inpData.heading.jobName}
+    <div className='p-2'>
+      <div className="row">
+        <div className="col p-1">
+          Job name: {inpData.heading.jobName}
+        </div>
       </div>
-    </div>
-    <div className="row">
-      <div className="col p-1">
-        Model name: {inpData.heading.modelName}
+      <div className="row">
+        <div className="col p-1">
+          Model name: {inpData.heading.modelName}
+        </div>
       </div>
-    </div>
-  </div> : <></>;
+    </div> : <></>;
 
   const onFirstBlockConductivityChange = (event) => {
-    dispatch(setFirstBlockTermalConductivity( { event: event.target.value } ))
+    dispatch(setFirstBlockTermalConductivity({ event: event.target.value }))
   };
 
   const onSecondBlockConductivityChange = (event) => {
-    dispatch(setSecondBlockTermalConductivity( { event: event.target.value } ))
+    dispatch(setSecondBlockTermalConductivity({ event: event.target.value }))
   };
 
   const onAirTemperatureChange = (event) => {
-    dispatch(setAirTemperature( { event: event.target.value } ))
+    dispatch(setAirTemperature({ event: event.target.value }))
   };
 
   const onWaterTemperatureChange = (event) => {
-    dispatch(setWaterTemperature( { event: event.target.value } ))
+    dispatch(setWaterTemperature({ event: event.target.value }))
   };
 
 
@@ -65,14 +71,14 @@ let App = () => {
   }
 
   let firstButton = first_block_visibility ? <button onClick={toggleFirstBlock} className='btn btn-success'><nobr>Show</nobr></button> :
-  <button onClick={toggleFirstBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
+    <button onClick={toggleFirstBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
 
   const toggleSecondBlock = () => {
     dispatch(toggleSecondBlockVisibility())
   }
 
   let secondButton = second_block_visibility ? <button onClick={toggleSecondBlock} className='btn btn-success'><nobr>Show</nobr></button> :
-  <button onClick={toggleSecondBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
+    <button onClick={toggleSecondBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
 
   const hintClick = () => {
     dispatch(toggleHint())
@@ -82,34 +88,39 @@ let App = () => {
   }
 
   const confirmUpload = (file) => {
-    dispatch(setcomputingStatus({status: "loading"}))
+    dispatch(setcomputingStatus({ status: "loading" }))
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-      var text = e.target.result;
+        var text = e.target.result;
       }
-      catch(error){
-        alert("Error reading file!");
-        dispatch(setcomputingStatus({status: "waiting"}))
+      catch (error) {
+        setErrorPopup({ title: "Error reading *.inp file", text: "Error reading file!" });
+        dispatch(setcomputingStatus({ status: "waiting" }))
         return;
       }
       try {
         let inpData = parseInpText(text);
         console.log(inpData);
-        dispatch(saveInpData({ data: inpData}));
-        dispatch(setcomputingStatus({status: "ready"}))
+        dispatch(saveInpData({ data: inpData }));
+        dispatch(setcomputingStatus({ status: "ready" }))
       }
-      catch(error){
-        alert("Error parsing file: \n" + error);
-        dispatch(setcomputingStatus({status: "waiting"}))
+      catch (error) {
+        setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
+        dispatch(setcomputingStatus({ status: "waiting" }))
       }
       dispatch(toggleUpload());
     };
     reader.readAsText(file);
   }
 
-  const hint_component = hint_status ? <HintComponent cancelAction = {hintClick}></HintComponent> : <></>
-  const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction = {uploadClick}></UploadComponent> : <></>
+  const closeError = () => {
+    setErrorPopup(null);  
+  }
+
+  const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
+  const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
+  const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
 
   const status = 'Press start'
   return (
@@ -117,6 +128,7 @@ let App = () => {
       <h1>{heat_transfer_status_text} heat transfer</h1>
       {hint_component}
       {upload_component}
+      {error_component}
       <div className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500}></canvas>
       </div>
@@ -141,7 +153,7 @@ let App = () => {
                 <input min={0} value={first_block_termal_conductivity} onChange={onFirstBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
-              <label>W/mK</label>
+                <label>W/mK</label>
               </div>
             </div>
           </div>
@@ -161,7 +173,7 @@ let App = () => {
                 <input min={0} value={second_block_termal_conductivity} onChange={onSecondBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
               </div>
               <div className='col'>
-              <label>W/mK</label>
+                <label>W/mK</label>
               </div>
             </div>
           </div>
@@ -173,7 +185,7 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className='col'>
-              <label>Water:</label>
+                <label>Water:</label>
               </div>
               <div className="col">
                 <input min={0} value={water_temperature} onChange={onWaterTemperatureChange} type='number' className='form-control'></input>
@@ -186,7 +198,7 @@ let App = () => {
           <div className='p-2 form-group'>
             <div className="row">
               <div className='col'>
-              <label>Air:</label>
+                <label>Air:</label>
               </div>
               <div className="col">
                 <input min={0} value={air_temperature} type='number' onChange={onAirTemperatureChange} className='form-control'></input>
@@ -216,10 +228,10 @@ let App = () => {
           <div className='p-2'>Status: <b>{getStatusText(computingStatus)}</b></div>
           {statusData}
           <div className='p-2'>
-            <button disabled={!canStartComputing} className='btn btn-lg btn-primary'>Start</button>  
+            <button disabled={!canStartComputing} className='btn btn-lg btn-primary'>Start</button>
           </div>
         </div>
-        
+
       </div>
     </div>
   );
