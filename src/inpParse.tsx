@@ -122,8 +122,28 @@ const parsePartLines = (part: Array<string>): partProblem => {
         throw new InpParsingError("Part name not found");
     }
 
+    let nodes: Array<Array<number>> = []
 
-    return { name: partName, nodes: [] };
+    let nodeParsingFlag = false;
+
+
+    for (let i = 1; i < part.length; i++) {
+        if(part[i].startsWith("*Node")){
+            nodeParsingFlag = true;
+            continue;
+        }
+        if(part[i].startsWith("*Element")){
+            break;
+        }
+        if(nodeParsingFlag){
+            nodes.push(part[i].split(',').map(num => parseFloat(num.trim())));
+            continue;
+        }
+        
+
+    }
+
+    return { name: partName, nodes: nodes };
 }
 
 const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
