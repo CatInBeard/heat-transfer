@@ -3,7 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
 import { useState } from "react";
 import {
-  setHeatTranserStatus, toggleHint, toggleUpload, toggleFirstBlockVisibility,
+  toggleHint, toggleUpload, toggleFirstBlockVisibility,
   toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity,
   setAirTemperature, setWaterTemperature, saveInpData,
   setcomputingStatus
@@ -115,7 +115,7 @@ let App = () => {
   }
 
   const closeError = () => {
-    setErrorPopup(null);  
+    setErrorPopup(null);
   }
 
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
