@@ -7,7 +7,8 @@ class InpParsingError extends Error {
 
 type partProblem = {
     name: string,
-    nodes: Array<Array<number>>
+    nodes: Array<Array<number>>,
+    elements: Array<Array<number>>,
 }
 
 const parseInpText = (inpTextData: string) => {
@@ -123,8 +124,10 @@ const parsePartLines = (part: Array<string>): partProblem => {
     }
 
     let nodes: Array<Array<number>> = []
+    let elements: Array<Array<number>> = []
 
     let nodeParsingFlag = false;
+    let elementParsingFlag = false;
 
 
     for (let i = 1; i < part.length; i++) {
@@ -132,18 +135,29 @@ const parsePartLines = (part: Array<string>): partProblem => {
             nodeParsingFlag = true;
             continue;
         }
+        if(nodeParsingFlag && part[i].startsWith("*")){
+            nodeParsingFlag = false;
+        }
+        if(elementParsingFlag && part[i].startsWith("*")){
+            elementParsingFlag = false;
+        }
         if(part[i].startsWith("*Element")){
-            break;
+            elementParsingFlag = true;
+            continue;
         }
         if(nodeParsingFlag){
             nodes.push(part[i].split(',').map(num => parseFloat(num.trim())));
+            continue;
+        }
+        if(elementParsingFlag){
+            elements.push(part[i].split(',').map(num => parseFloat(num.trim())));
             continue;
         }
         
 
     }
 
-    return { name: partName, nodes: nodes };
+    return { name: partName, nodes: nodes, elements:elements };
 }
 
 const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
