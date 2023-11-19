@@ -11,6 +11,7 @@ type partProblem = {
     elements: Array<Array<number>>,
     nsets: Array<Nset>,
     lsets: Array<Lset>,
+    sections: Array<Section>
 }
 
 type Nset = {
@@ -21,6 +22,13 @@ type Nset = {
 type Lset = {
     setname: string
     nodes: Array<number>
+}
+
+type Section = {
+    name: string,
+    type: string,
+    elsetName: string,
+    material: string
 }
 
 function range(start: number, end: number, step: number = 1): Array<number> {
@@ -147,29 +155,63 @@ const parsePartLines = (part: Array<string>): partProblem => {
     let elements: Array<Array<number>> = []
     let nsets: Array<Nset> = []
     let lsets: Array<Lset> = []
+    let sections: Array<Section> = []
 
-    let nodeParsingFlag : boolean = false;
-    let elementParsingFlag : boolean = false;
-    let nsetFlag : boolean = false;
-    let lsetFlag : boolean = false;    
+    let nodeParsingFlag: boolean = false;
+    let elementParsingFlag: boolean = false;
+    let nsetFlag: boolean = false;
+    let lsetFlag: boolean = false;
+    let sectionFlag: boolean = false;
 
 
     for (let i = 1; i < part.length; i++) {
-        if(part[i].startsWith("*")){
+        if (sectionFlag) {
+            const regex: RegExp = /\*(\w+) Section.*elset=([^\s,]+).*material=([^\s,]+)/;
+            const result: RegExpMatchArray | null = part[i].match(regex);
+
+            if (result && result.length === 4) {
+                var [, sectionType, elsetName, material]: string[] = result;
+            } else {
+                throw new InpParsingError("Section data not found");
+            }
+
+
+            sections[sections.length -1].elsetName = sectionType
+            sections[sections.length -1].material = elsetName
+            sections[sections.length -1].type = material
+
+            sectionFlag = false
+        }
+
+        if (part[i].startsWith("*")) {
             nodeParsingFlag = false;
             elementParsingFlag = false;
             nsetFlag = false;
             lsetFlag = false;
+            sectionFlag = false;
         }
-        if(part[i].startsWith("*Node")){
+        if (part[i].startsWith("*Node")) {
             nodeParsingFlag = true;
             continue;
         }
-        if(part[i].startsWith("*Element")){
+        if (part[i].startsWith("*Element")) {
             elementParsingFlag = true;
             continue;
         }
-        if(part[i].startsWith("*Nset")){
+        if (part[i].startsWith("** Section:")) {
+            sectionFlag = true;
+
+            const regexGenBy: RegExp = /\*\* Section: (.*?)$/;
+            const match: RegExpMatchArray | null = part[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                var name = match[1];
+            } else {
+                throw new InpParsingError("Section name not found");
+            }
+            sections.push({ name: name, elsetName: "", material: "", type: "" });
+            continue;
+        }
+        if (part[i].startsWith("*Nset")) {
             nsetFlag = true;
 
             const regexGenBy: RegExp = /nset=(.*?),/;
@@ -179,10 +221,10 @@ const parsePartLines = (part: Array<string>): partProblem => {
             } else {
                 throw new InpParsingError("Set name not found");
             }
-            nsets.push({setname: name, nodes: []});
+            nsets.push({ setname: name, nodes: [] });
             continue;
         }
-        if(part[i].startsWith("*Elset")){
+        if (part[i].startsWith("*Elset")) {
             lsetFlag = true;
 
             const regexGenBy: RegExp = /elset=(.*?),/;
@@ -192,41 +234,41 @@ const parsePartLines = (part: Array<string>): partProblem => {
             } else {
                 throw new InpParsingError("Set name not found");
             }
-            lsets.push({setname: name, nodes: []});
+            lsets.push({ setname: name, nodes: [] });
             continue;
         }
-        if(nodeParsingFlag){
+        if (nodeParsingFlag) {
             nodes.push(part[i].split(',').map(num => parseFloat(num.trim())));
             continue;
         }
-        if(elementParsingFlag){
+        if (elementParsingFlag) {
             elements.push(part[i].split(',').map(num => parseFloat(num.trim())));
             continue;
         }
-        if(nsetFlag){
+        if (nsetFlag) {
             let setNodes = part[i].split(',').map(num => parseFloat(num.trim()))
-            if(setNodes.length == 3 && part[i-1].startsWith("*Nset")){
-                nsets[nsets.length - 1].nodes = range(setNodes[0],setNodes[1],setNodes[2]);
+            if (setNodes.length == 3 && part[i - 1].startsWith("*Nset")) {
+                nsets[nsets.length - 1].nodes = range(setNodes[0], setNodes[1], setNodes[2]);
             }
-            else{
+            else {
                 nsets[nsets.length - 1].nodes = [...nsets[nsets.length - 1].nodes, ...setNodes];
             }
         }
-        if(lsetFlag){
+        if (lsetFlag) {
             let setElements = part[i].split(',').map(num => parseFloat(num.trim()))
-            if(setElements.length == 3 && part[i-1].startsWith("*Elset")){
-                lsets[lsets.length - 1].nodes = range(setElements[0],setElements[1],setElements[2]);
+            if (setElements.length == 3 && part[i - 1].startsWith("*Elset")) {
+                lsets[lsets.length - 1].nodes = range(setElements[0], setElements[1], setElements[2]);
             }
-            else{
+            else {
                 lsets[lsets.length - 1].nodes = [...lsets[lsets.length - 1].nodes, ...setElements];
             }
         }
-        
+
 
     }
-    
 
-    return { name: partName, nodes: nodes, elements:elements, nsets: nsets, lsets:lsets };
+
+    return { name: partName, nodes: nodes, elements: elements, nsets: nsets, lsets: lsets, sections: sections };
 }
 
 const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
