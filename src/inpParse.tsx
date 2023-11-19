@@ -31,6 +31,13 @@ type Section = {
     material: string
 }
 
+type Material = {
+    name: string,
+    conductivity: number,
+    density: number,
+    specificHeat: number
+}
+
 function range(start: number, end: number, step: number = 1): Array<number> {
     let result: number[] = [];
     for (let i = start; i <= end; i += step) {
@@ -46,6 +53,7 @@ const parseInpText = (inpTextData: string) => {
     let inpData = [];
     inpData["heading"] = getHeadings(inpDataLines);
     inpData["problemData"] = getProblemData(inpDataLines);
+    inpData["materials"] = getMaterialsData(inpDataLines);
 
     return inpData;
 }
@@ -176,9 +184,9 @@ const parsePartLines = (part: Array<string>): partProblem => {
             }
 
 
-            sections[sections.length -1].elsetName = sectionType
-            sections[sections.length -1].material = elsetName
-            sections[sections.length -1].type = material
+            sections[sections.length - 1].elsetName = sectionType
+            sections[sections.length - 1].material = elsetName
+            sections[sections.length - 1].type = material
 
             sectionFlag = false
         }
@@ -305,6 +313,74 @@ const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
 
     return parts;
 
+}
+
+const getMaterialStrings = (inpDataLines: Array<string>): Array<string> => {
+    let strings: Array<string> = [];
+
+    let materialSection: boolean = false;
+
+    for (let i: number = 0; i < inpDataLines.length; i++) {
+        if (inpDataLines[i].startsWith("** MATERIALS")) {
+            materialSection = true;
+            continue
+        }
+
+        if (inpDataLines[i].startsWith("** ---------")) {
+            break;
+        }
+
+        if (materialSection) {
+            strings.push(inpDataLines[i])
+        }
+    }
+
+    return strings;
+}
+
+const getMaterialsData = (inpDataLines: Array<string>): Array<Material> => {
+
+    let materials: Array<Material> = []
+
+    let materialStrings: Array<string> = getMaterialStrings(inpDataLines);
+
+    for (let i: number = 0; i < materialStrings.length; i++) {
+        if(materialStrings[i].startsWith("*Material")){
+            const regexGenBy: RegExp = /name=(.*?)$/;
+            const match: RegExpMatchArray | null = materialStrings[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                materials.push({name: match[1], conductivity: -1, density: -1, specificHeat: -1})
+            } else {
+                throw new InpParsingError("Material name not found");
+            }
+            continue;
+        }
+
+        if(materialStrings[i].startsWith("**"))
+            continue
+
+        if(materialStrings[i-1].startsWith("*Conductivity")){
+            materials[materials.length-1].conductivity = parseFloat(materialStrings[i].trim());
+        }
+        if(materialStrings[i-1].startsWith("*Density")){
+            materials[materials.length-1].density = parseFloat(materialStrings[i].trim());
+        }
+        if(materialStrings[i-1].startsWith("*Specific Heat")){
+            materials[materials.length-1].specificHeat = parseFloat(materialStrings[i].trim());
+        }
+    }
+
+    if(materials.length<1){
+        throw new InpParsingError("At least one material must be specified");
+    }
+
+    for(let i: number = 0; i< materials.length; i++){
+        if(materials[i].conductivity < 0 || materials[i].density < 0 || materials[i].specificHeat < 0) {
+            throw new InpParsingError("Material must have conductivity, density and specific heat parametrs");
+        }
+    }
+
+    return materials;
 }
 
 export { parseInpText, InpParsingError }
