@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
+import produce from 'immer';
 
 const valuesSlice = createSlice({
   name: 'values',
@@ -6,10 +7,8 @@ const valuesSlice = createSlice({
     heat_transfer_status_text: "Steady-state",
     show_hint: false,
     show_upload: false,
-    first_block_visibility: false,
-    second_block_visibility: false,
-    first_block_termal_conductivity: 0,
-    second_block_termal_conductivity: 0,
+    blocks_visibility: {},
+    blocks_termal_conductivity: {},
     water_temperature: 273.15,
     air_temperature: 273.15,
     computingStatus: "waiting",
@@ -22,11 +21,16 @@ const valuesSlice = createSlice({
     setcomputingStatus: (state, action) => {
       state.computingStatus = action.payload.status
     },
-    setFirstBlockTermalConductivity: (state, action) => {
-      state.first_block_termal_conductivity = action.payload.value
-    },
-    setSecondBlockTermalConductivity: (state, action) => {
-      state.second_block_termal_conductivity = action.payload.value
+    setBlockTermalConductivity: (state, action) => {
+      const sectionName = action.payload.sectionName
+      const value = action.payload.value
+      return {
+        ...state,
+        blocks_termal_conductivity: {
+          ...state.blocks_termal_conductivity,
+          [sectionName]: value
+        }
+      };
     },
     setAirTemperature: (state, action) => {
       state.air_temperature = action.payload.value
@@ -40,21 +44,31 @@ const valuesSlice = createSlice({
     toggleUpload: (state, action) => {
       state.show_upload = !state.show_upload 
     },
-    toggleFirstBlockVisibility: (state, action) => {
-      state.first_block_visibility = !state.first_block_visibility 
-    },
-    toggleSecondBlockVisibility: (state, action) => {
-      state.second_block_visibility = !state.second_block_visibility 
+    toggleBlockVisibility: (state, action) => {
+      let blocks_visibility = state.blocks_visibility;
+      const sectionName = action.payload.sectionName
+      return {
+        ...state,
+        blocks_visibility: {
+          ...state.blocks_visibility,
+          [sectionName]: !blocks_visibility[sectionName]
+        }
+      };
     },
     saveInpData: (state, action) => {
       state.inpData = action.payload.data
+      state.blocks_visibility = []
+      state.inpData.problemData[0].sections.forEach( section => {
+        state.blocks_visibility[section.name] = true
+        state.blocks_termal_conductivity[section.name] = 0
+      });
     },
   },
 })
 
-export const { toggleHint,setHeatTranserStatus, toggleUpload, toggleFirstBlockVisibility,
-  toggleSecondBlockVisibility, setFirstBlockTermalConductivity,
-  setSecondBlockTermalConductivity, setAirTemperature, setWaterTemperature,
+export const { toggleHint,setHeatTranserStatus, toggleUpload,
+  toggleBlockVisibility, setBlockTermalConductivity,
+  setAirTemperature, setWaterTemperature,
   saveInpData, setcomputingStatus } = valuesSlice.actions
 
 export default valuesSlice.reducer

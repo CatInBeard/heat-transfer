@@ -3,8 +3,8 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
 import { useState } from "react";
 import {
-  toggleHint, toggleUpload, toggleFirstBlockVisibility,
-  toggleSecondBlockVisibility, setFirstBlockTermalConductivity, setSecondBlockTermalConductivity,
+  toggleHint, toggleUpload, toggleBlockVisibility,
+  setBlockTermalConductivity,
   setAirTemperature, setWaterTemperature, saveInpData,
   setcomputingStatus
 } from './store/reducers/values.jsx'
@@ -28,6 +28,8 @@ let App = () => {
   const air_temperature = useSelector((state) => state.values.air_temperature)
   const inpData = useSelector((state) => state.values.inpData)
   const computingStatus = useSelector((state) => state.values.computingStatus)
+  const blocksVisibility = useSelector((state) => state.values.blocks_visibility)
+  const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
 
   const [errorPopup, setErrorPopup] = useState(null);
 
@@ -48,12 +50,9 @@ let App = () => {
       </div>
     </div> : <></>;
 
-  const onFirstBlockConductivityChange = (event) => {
-    dispatch(setFirstBlockTermalConductivity({ event: event.target.value }))
-  };
-
-  const onSecondBlockConductivityChange = (event) => {
-    dispatch(setSecondBlockTermalConductivity({ event: event.target.value }))
+  const onBlockConductivityChange = (event) => {
+    const sectionName = event.target.getAttribute('data-section-name');
+    dispatch(setBlockTermalConductivity({ event: event.target.value, sectionName: sectionName }))
   };
 
   const onAirTemperatureChange = (event) => {
@@ -66,19 +65,11 @@ let App = () => {
 
 
 
-  const toggleFirstBlock = () => {
-    dispatch(toggleFirstBlockVisibility())
+  const toggleBlock = (event) => {
+    const sectionName = event.target.getAttribute('data-section-name');
+    dispatch(toggleBlockVisibility({sectionName: sectionName}))
   }
 
-  let firstButton = first_block_visibility ? <button onClick={toggleFirstBlock} className='btn btn-success'><nobr>Show</nobr></button> :
-    <button onClick={toggleFirstBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
-
-  const toggleSecondBlock = () => {
-    dispatch(toggleSecondBlockVisibility())
-  }
-
-  let secondButton = second_block_visibility ? <button onClick={toggleSecondBlock} className='btn btn-success'><nobr>Show</nobr></button> :
-    <button onClick={toggleSecondBlock} className='btn btn-danger'><nobr>Hide</nobr></button>
 
   const hintClick = () => {
     dispatch(toggleHint())
@@ -118,6 +109,49 @@ let App = () => {
     setErrorPopup(null);
   }
 
+  const canChangeSectionsSettings = computingStatus != "waiting" && inpData !== null;
+
+  let blocksSettings = !canChangeSectionsSettings ?
+  <div className='p-2'>
+    <div className="row">
+      <div className="col alert alert-info">
+        To change settings, first upload the file
+      </div>
+    </div>
+  </div>: <>
+  {inpData.problemData[0].sections.map( (section) =>{
+
+    let block_visibility = !blocksVisibility[section.name]
+    let block_termal_conductivity = blocks_termal_conductivity[section.name];
+    let Button = block_visibility ? <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-success'><nobr data-section-name={section.name}>Show</nobr></button> :
+    <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
+
+  return <>
+  <div className='p-2'>
+    <div className="row">
+      <div className="col">
+        {section.name}:
+      </div>
+      <div className="col">
+        {Button}
+      </div>
+    </div>
+  </div>
+  <div className='p-2 form-group row'>
+    <div className="row">
+      <div className="col">
+        <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className='form-control'></input>
+      </div>
+      <div className='col'>
+        <label>W/mK</label>
+      </div>
+    </div>
+  </div>
+  </>
+  }
+  )}</>
+
+
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
   const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
@@ -137,46 +171,9 @@ let App = () => {
           <div className='p-2'>
             Сhange thermal conductivity coefficient
           </div>
-          <div className='p-2'>
-            <div className="row">
-              <div className="col">
-                First block:
-              </div>
-              <div className="col">
-                {firstButton}
-              </div>
-            </div>
-          </div>
-          <div className='p-2 form-group row'>
-            <div className="row">
-              <div className="col">
-                <input min={0} value={first_block_termal_conductivity} onChange={onFirstBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
-              </div>
-              <div className='col'>
-                <label>W/mK</label>
-              </div>
-            </div>
-          </div>
-          <div className='p-2'>
-            <div className="row">
-              <div className="col">
-                <nobr>Second block:</nobr>
-              </div>
-              <div className="col">
-                {secondButton}
-              </div>
-            </div>
-          </div>
-          <div className='p-2 form-group'>
-            <div className="row">
-              <div className="col">
-                <input min={0} value={second_block_termal_conductivity} onChange={onSecondBlockConductivityChange} type='number' className='form-control' name="coefB1" id="coefB1"></input>
-              </div>
-              <div className='col'>
-                <label>W/mK</label>
-              </div>
-            </div>
-          </div>
+          
+          {blocksSettings}
+          
         </div>
         <div className='p-2 d-flex flex-column'>
           <div className='p-2'>
