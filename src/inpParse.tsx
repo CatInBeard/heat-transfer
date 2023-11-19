@@ -9,6 +9,26 @@ type partProblem = {
     name: string,
     nodes: Array<Array<number>>,
     elements: Array<Array<number>>,
+    nsets: Array<Nset>,
+    lsets: Array<Lset>,
+}
+
+type Nset = {
+    setname: string
+    nodes: Array<number>
+}
+
+type Lset = {
+    setname: string
+    nodes: Array<number>
+}
+
+function range(start: number, end: number, step: number = 1): Array<number> {
+    let result: number[] = [];
+    for (let i = start; i <= end; i += step) {
+        result.push(i);
+    }
+    return result;
 }
 
 const parseInpText = (inpTextData: string) => {
@@ -125,24 +145,54 @@ const parsePartLines = (part: Array<string>): partProblem => {
 
     let nodes: Array<Array<number>> = []
     let elements: Array<Array<number>> = []
+    let nsets: Array<Nset> = []
+    let lsets: Array<Lset> = []
 
-    let nodeParsingFlag = false;
-    let elementParsingFlag = false;
+    let nodeParsingFlag : boolean = false;
+    let elementParsingFlag : boolean = false;
+    let nsetFlag : boolean = false;
+    let lsetFlag : boolean = false;    
 
 
     for (let i = 1; i < part.length; i++) {
+        if(part[i].startsWith("*")){
+            nodeParsingFlag = false;
+            elementParsingFlag = false;
+            nsetFlag = false;
+            lsetFlag = false;
+        }
         if(part[i].startsWith("*Node")){
             nodeParsingFlag = true;
             continue;
         }
-        if(nodeParsingFlag && part[i].startsWith("*")){
-            nodeParsingFlag = false;
-        }
-        if(elementParsingFlag && part[i].startsWith("*")){
-            elementParsingFlag = false;
-        }
         if(part[i].startsWith("*Element")){
             elementParsingFlag = true;
+            continue;
+        }
+        if(part[i].startsWith("*Nset")){
+            nsetFlag = true;
+
+            const regexGenBy: RegExp = /nset=(.*?),/;
+            const match: RegExpMatchArray | null = part[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                var name = match[1];
+            } else {
+                throw new InpParsingError("Set name not found");
+            }
+            nsets.push({setname: name, nodes: []});
+            continue;
+        }
+        if(part[i].startsWith("*Elset")){
+            lsetFlag = true;
+
+            const regexGenBy: RegExp = /elset=(.*?),/;
+            const match: RegExpMatchArray | null = part[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                var name = match[1];
+            } else {
+                throw new InpParsingError("Set name not found");
+            }
+            lsets.push({setname: name, nodes: []});
             continue;
         }
         if(nodeParsingFlag){
@@ -153,11 +203,30 @@ const parsePartLines = (part: Array<string>): partProblem => {
             elements.push(part[i].split(',').map(num => parseFloat(num.trim())));
             continue;
         }
+        if(nsetFlag){
+            let setNodes = part[i].split(',').map(num => parseFloat(num.trim()))
+            if(setNodes.length == 3 && part[i-1].startsWith("*Nset")){
+                nsets[nsets.length - 1].nodes = range(setNodes[0],setNodes[1],setNodes[2]);
+            }
+            else{
+                nsets[nsets.length - 1].nodes = [...nsets[nsets.length - 1].nodes, ...setNodes];
+            }
+        }
+        if(lsetFlag){
+            let setElements = part[i].split(',').map(num => parseFloat(num.trim()))
+            if(setElements.length == 3 && part[i-1].startsWith("*Elset")){
+                lsets[lsets.length - 1].nodes = range(setElements[0],setElements[1],setElements[2]);
+            }
+            else{
+                lsets[lsets.length - 1].nodes = [...lsets[lsets.length - 1].nodes, ...setElements];
+            }
+        }
         
 
     }
+    
 
-    return { name: partName, nodes: nodes, elements:elements };
+    return { name: partName, nodes: nodes, elements:elements, nsets: nsets, lsets:lsets };
 }
 
 const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
