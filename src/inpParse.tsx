@@ -184,9 +184,9 @@ const parsePartLines = (part: Array<string>): partProblem => {
             }
 
 
-            sections[sections.length - 1].elsetName = sectionType
-            sections[sections.length - 1].material = elsetName
-            sections[sections.length - 1].type = material
+            sections[sections.length - 1].elsetName = elsetName
+            sections[sections.length - 1].material = material
+            sections[sections.length - 1].type = sectionType
 
             sectionFlag = false
         }
