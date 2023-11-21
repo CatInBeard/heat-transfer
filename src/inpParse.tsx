@@ -38,6 +38,20 @@ type Material = {
     specificHeat: number
 }
 
+type Step = {
+    name: string,
+    jobType: string,
+    stateType: string
+    boundaries: Array<Boundary>,
+}
+
+type Boundary = {
+    name: string,
+    type: string,
+    setName: string,
+    additionalData: Record<string, any>
+}
+
 function range(start: number, end: number, step: number = 1): Array<number> {
     let result: number[] = [];
     for (let i = start; i <= end; i += step) {
@@ -54,6 +68,7 @@ const parseInpText = (inpTextData: string) => {
     inpData["heading"] = getHeadings(inpDataLines);
     inpData["problemData"] = getProblemData(inpDataLines);
     inpData["materials"] = getMaterialsData(inpDataLines);
+    inpData["steps"] = getStepData(inpDataLines);
 
     return inpData;
 }
@@ -136,7 +151,7 @@ const getProblemData = (inpDataLines: Array<string>): Array<partProblem> => {
     const parts = findParts(inpDataLines);
 
     let partsProblems: Array<partProblem> = [];
-
+    
     for (let i: number = 0; i < parts.length; i++) {
         partsProblems.push(parsePartLines(parts[i]));
     }
@@ -345,42 +360,148 @@ const getMaterialsData = (inpDataLines: Array<string>): Array<Material> => {
     let materialStrings: Array<string> = getMaterialStrings(inpDataLines);
 
     for (let i: number = 0; i < materialStrings.length; i++) {
-        if(materialStrings[i].startsWith("*Material")){
+        if (materialStrings[i].startsWith("*Material")) {
             const regexGenBy: RegExp = /name=(.*?)$/;
             const match: RegExpMatchArray | null = materialStrings[i].match(regexGenBy);
             if (match && match.length === 2) {
-                materials.push({name: match[1], conductivity: -1, density: -1, specificHeat: -1})
+                materials.push({ name: match[1], conductivity: -1, density: -1, specificHeat: -1 })
             } else {
                 throw new InpParsingError("Material name not found");
             }
             continue;
         }
 
-        if(materialStrings[i].startsWith("**"))
+        if (materialStrings[i].startsWith("**"))
             continue
 
-        if(materialStrings[i-1].startsWith("*Conductivity")){
-            materials[materials.length-1].conductivity = parseFloat(materialStrings[i].trim());
+        if (materialStrings[i - 1].startsWith("*Conductivity")) {
+            materials[materials.length - 1].conductivity = parseFloat(materialStrings[i].trim());
         }
-        if(materialStrings[i-1].startsWith("*Density")){
-            materials[materials.length-1].density = parseFloat(materialStrings[i].trim());
+        if (materialStrings[i - 1].startsWith("*Density")) {
+            materials[materials.length - 1].density = parseFloat(materialStrings[i].trim());
         }
-        if(materialStrings[i-1].startsWith("*Specific Heat")){
-            materials[materials.length-1].specificHeat = parseFloat(materialStrings[i].trim());
+        if (materialStrings[i - 1].startsWith("*Specific Heat")) {
+            materials[materials.length - 1].specificHeat = parseFloat(materialStrings[i].trim());
         }
     }
 
-    if(materials.length<1){
+    if (materials.length < 1) {
         throw new InpParsingError("At least one material must be specified");
     }
 
-    for(let i: number = 0; i< materials.length; i++){
-        if(materials[i].conductivity < 0 || materials[i].density < 0 || materials[i].specificHeat < 0) {
+    for (let i: number = 0; i < materials.length; i++) {
+        if (materials[i].conductivity < 0 || materials[i].density < 0 || materials[i].specificHeat < 0) {
             throw new InpParsingError("Material must have conductivity, density and specific heat parametrs");
         }
     }
 
     return materials;
+}
+
+const getStepStrings = (inpDataLines: Array<string>): Array<string> => {
+    let strings: Array<string> = [];
+
+    let stepSection: boolean = false;
+
+    for (let i: number = 0; i < inpDataLines.length; i++) {
+        if (inpDataLines[i].startsWith("** STEP:")) {
+            stepSection = true;
+            continue
+        }
+
+        if (stepSection) {
+            strings.push(inpDataLines[i])
+        }
+    }
+
+    return strings;
+}
+
+const getStepData = (inpDataLines: Array<string>): Array<Step> => {
+    let steps: Array<Step> = []
+
+    let stepStrings: Array<string> = getStepStrings(inpDataLines);
+
+    let stepDataFlag: boolean = false;
+    let boundarySectionFlag: boolean = false;
+
+    for (let i: number = 0; i < stepStrings.length; i++) {
+        if (stepStrings[i].startsWith("*Step, name=")) {
+            stepDataFlag = true;
+            boundarySectionFlag = false;
+
+            const regexGenBy: RegExp = /name=(.*?),/;
+            const match: RegExpMatchArray | null = stepStrings[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                steps.push({
+                    name: match[1],
+                    stateType: "",
+                    jobType: "",
+                    boundaries: [],
+                })
+            } else {
+                throw new InpParsingError("Job name not found");
+            }
+            continue;
+        }
+        if (stepDataFlag) {
+            const regex: RegExp = /\*(.*?), (.*?)$/;
+            const matches: RegExpMatchArray | null = stepStrings[i].match(regex);
+
+            if (matches && matches.length === 3) {
+                steps[steps.length - 1].jobType = matches[1];
+                steps[steps.length - 1].stateType = matches[2];
+            } else {
+                throw new InpParsingError("Step type or state type not found!");
+            }
+            stepDataFlag = false;
+            continue;
+        }
+
+        if(stepStrings[i].startsWith("** BOUNDARY CONDITIONS")){
+            boundarySectionFlag = true;
+            continue;
+        }
+        
+        if(boundarySectionFlag){
+
+            if(stepStrings[i].startsWith("*Boundary")){
+                const regex: RegExp = /Name: (.*?) Type: (.*?)$/;
+                const matches: RegExpMatchArray | null = stepStrings[i-1].match(regex);
+
+                if (matches && matches.length === 3) {
+                    steps[steps.length - 1].boundaries.push({
+                        name: matches[1],
+                        type: matches[2],
+                        setName: "",
+                        additionalData: {}
+                    })
+                } else {
+                    throw new InpParsingError("Boundary name or type not found!");
+                }
+
+                if( !(i+1 <stepStrings.length) ) {
+                    throw new InpParsingError("Boundary set name not found!");
+                }
+
+
+                let BCdata = stepStrings[i+1].split(',').map(num => num.trim())
+
+                steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].setName = BCdata[0]
+
+                if(steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].type == "Temperature"){
+                    steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].additionalData.temperature = parseFloat(BCdata[BCdata.length-1])
+                }
+
+            }
+
+
+
+        }
+
+    }
+
+    return steps;
 }
 
 export { parseInpText, InpParsingError }
