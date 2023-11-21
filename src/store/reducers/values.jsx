@@ -61,13 +61,8 @@ const valuesSlice = createSlice({
       state.inpData.problemData[0].sections.forEach( section => {
         state.blocks_visibility[section.name] = true
 
-        console.log(section.material);
-
-        console.log(state.materials);
         
         let material = state.inpData.materials.find((material) => material.name == section.material)
-        
-        console.log(material);
         
         if(material){
           state.blocks_termal_conductivity[section.name] = material.conductivity
