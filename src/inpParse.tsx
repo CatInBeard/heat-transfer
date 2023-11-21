@@ -151,7 +151,7 @@ const getProblemData = (inpDataLines: Array<string>): Array<partProblem> => {
     const parts = findParts(inpDataLines);
 
     let partsProblems: Array<partProblem> = [];
-    
+
     for (let i: number = 0; i < parts.length; i++) {
         partsProblems.push(parsePartLines(parts[i]));
     }
@@ -458,16 +458,16 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
             continue;
         }
 
-        if(stepStrings[i].startsWith("** BOUNDARY CONDITIONS")){
+        if (stepStrings[i].startsWith("** BOUNDARY CONDITIONS")) {
             boundarySectionFlag = true;
             continue;
         }
-        
-        if(boundarySectionFlag){
 
-            if(stepStrings[i].startsWith("*Boundary")){
+        if (boundarySectionFlag) {
+
+            if (stepStrings[i].startsWith("*Boundary")) {
                 const regex: RegExp = /Name: (.*?) Type: (.*?)$/;
-                const matches: RegExpMatchArray | null = stepStrings[i-1].match(regex);
+                const matches: RegExpMatchArray | null = stepStrings[i - 1].match(regex);
 
                 if (matches && matches.length === 3) {
                     steps[steps.length - 1].boundaries.push({
@@ -480,17 +480,17 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                     throw new InpParsingError("Boundary name or type not found!");
                 }
 
-                if( !(i+1 <stepStrings.length) ) {
+                if (!(i + 1 < stepStrings.length)) {
                     throw new InpParsingError("Boundary set name not found!");
                 }
 
 
-                let BCdata = stepStrings[i+1].split(',').map(num => num.trim())
+                let BCdata = stepStrings[i + 1].split(',').map(num => num.trim())
 
-                steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].setName = BCdata[0]
+                steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].setName = BCdata[0]
 
-                if(steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].type == "Temperature"){
-                    steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length-1].additionalData.temperature = parseFloat(BCdata[BCdata.length-1])
+                if (steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].type == "Temperature") {
+                    steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].additionalData.temperature = parseFloat(BCdata[BCdata.length - 1])
                 }
 
             }
@@ -504,4 +504,17 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
     return steps;
 }
 
-export { parseInpText, InpParsingError }
+const checkInpDataForHeatTransfer = (inpDataLines) => {
+
+    let steps: Array<Step> = inpDataLines.steps;
+
+    for (let i = 0; i < steps.length; i++) {
+        let step: Step = steps[i];
+
+        if(step.jobType != "Heat Transfer"){
+            throw new InpParsingError("The problem is not thermal");
+        }
+    }
+}
+
+export { parseInpText, checkInpDataForHeatTransfer, InpParsingError }

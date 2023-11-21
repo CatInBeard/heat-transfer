@@ -10,7 +10,7 @@ import {
 } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
-import { parseInpText } from './inpParse.tsx';
+import { parseInpText, checkInpDataForHeatTransfer } from './inpParse.tsx';
 import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
@@ -84,14 +84,8 @@ let App = () => {
     reader.onload = (e) => {
       try {
         var text = e.target.result;
-      }
-      catch (error) {
-        setErrorPopup({ title: "Error reading *.inp file", text: "Error reading file!" });
-        dispatch(setcomputingStatus({ status: "waiting" }))
-        return;
-      }
-      try {
         let inpData = parseInpText(text);
+        checkInpDataForHeatTransfer(inpData);
         console.log(inpData);
         dispatch(saveInpData({ data: inpData }));
         dispatch(setcomputingStatus({ status: "ready" }))
