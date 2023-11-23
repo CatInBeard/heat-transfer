@@ -1,7 +1,7 @@
 import ClosablePopupContainer from "./closablePopup/ClosablePopup";
 
 let hintComponent = ({cancelAction}) => {
-    return <ClosablePopupContainer cancelAction={cancelAction} headerText="File format hint">
+    return <ClosablePopupContainer focusOnClose={true} cancelAction={cancelAction} headerText="File format hint">
         
         <ol> 
             <li>
