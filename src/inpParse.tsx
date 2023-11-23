@@ -54,6 +54,11 @@ type TemperatureBC = {
     temperature: number
 }
 
+type Assembly = {
+    nsets: Array<Nset>,
+    lsets: Array<Lset>
+}
+
 function range(start: number, end: number, step: number = 1): Array<number> {
     let result: number[] = [];
     for (let i = start; i <= end; i += step) {
@@ -69,6 +74,7 @@ const parseInpText = (inpTextData: string) => {
     let inpData = [];
     inpData["heading"] = getHeadings(inpDataLines);
     inpData["problemData"] = getProblemData(inpDataLines);
+    inpData["assembly"] = getAssemblyData(inpDataLines);
     inpData["materials"] = getMaterialsData(inpDataLines);
     inpData["steps"] = getStepData(inpDataLines);
 
@@ -272,7 +278,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
         }
         if (nsetFlag) {
             let setNodes = part[i].split(',').map(num => parseFloat(num.trim()))
-            if (setNodes.length == 3 && part[i - 1].startsWith("*Nset")) {
+            if (setNodes.length == 3 && part[i - 1].startsWith("*Nset") && (setNodes[0]+1 != setNodes[1] && setNodes[1]+1 != setNodes[2])) {
                 nsets[nsets.length - 1].nodes = range(setNodes[0], setNodes[1], setNodes[2]);
             }
             else {
@@ -281,7 +287,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
         }
         if (lsetFlag) {
             let setElements = part[i].split(',').map(num => parseFloat(num.trim()))
-            if (setElements.length == 3 && part[i - 1].startsWith("*Elset")) {
+            if (setElements.length == 3 && part[i - 1].startsWith("*Elset") && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
                 lsets[lsets.length - 1].nodes = range(setElements[0], setElements[1], setElements[2]);
             }
             else {
@@ -332,6 +338,29 @@ const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
 
 }
 
+const getAssemblyStrings = (inpDataLines: Array<string>): Array<string> => {
+    let strings: Array<string> = [];
+
+    let materialSection: boolean = false;
+
+    for (let i: number = 0; i < inpDataLines.length; i++) {
+        if (inpDataLines[i].startsWith("** ASSEMBLY")) {
+            materialSection = true;
+            continue
+        }
+
+        if (inpDataLines[i].startsWith("*End Assembly")) {
+            break;
+        }
+
+        if (materialSection) {
+            strings.push(inpDataLines[i])
+        }
+    }
+
+    return strings;
+}
+
 const getMaterialStrings = (inpDataLines: Array<string>): Array<string> => {
     let strings: Array<string> = [];
 
@@ -353,6 +382,74 @@ const getMaterialStrings = (inpDataLines: Array<string>): Array<string> => {
     }
 
     return strings;
+}
+
+const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
+
+
+    let assemblyStrings: Array<string> = getAssemblyStrings(inpDataLines);
+
+    let nsets: Array<Nset> = [];
+    let lsets: Array<Lset> = [];
+
+    let nsetFlag: boolean = false;
+    let lsetFlag: boolean = false;
+
+    for (let i: number = 0; i < assemblyStrings.length; i++) {
+
+        if (assemblyStrings[i].startsWith("*")) {
+            nsetFlag = false;
+            lsetFlag = false;
+        }
+        if (assemblyStrings[i].startsWith("*Nset")) {
+            nsetFlag = true;
+
+            const regexGenBy: RegExp = /nset=(.*?),/;
+            const match: RegExpMatchArray | null = assemblyStrings[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                var name = match[1];
+            } else {
+                throw new InpParsingError("Set name not found");
+            }
+            nsets.push({ setname: name, nodes: [] });
+            continue;
+        }
+        if (assemblyStrings[i].startsWith("*Elset")) {
+            lsetFlag = true;
+
+            const regexGenBy: RegExp = /elset=(.*?),/;
+            const match: RegExpMatchArray | null = assemblyStrings[i].match(regexGenBy);
+            if (match && match.length === 2) {
+                var name = match[1];
+            } else {
+                throw new InpParsingError("Set name not found");
+            }
+            lsets.push({ setname: name, nodes: [] });
+            continue;
+        }
+        if (nsetFlag) {
+            let setNodes = assemblyStrings[i].split(',').map(num => parseFloat(num.trim()))
+            if (setNodes.length == 3 && assemblyStrings[i - 1].startsWith("*Nset") && (setNodes[0]+1 != setNodes[1] && setNodes[1]+1 != setNodes[2]) ) {
+                nsets[nsets.length - 1].nodes = range(setNodes[0], setNodes[1], setNodes[2]);
+            }
+            else {
+                nsets[nsets.length - 1].nodes = [...nsets[nsets.length - 1].nodes, ...setNodes];
+            }
+        }
+        if (lsetFlag) {
+            let setElements = assemblyStrings[i].split(',').map(num => parseFloat(num.trim()))
+            if (setElements.length == 3 && assemblyStrings[i - 1].startsWith("*Elset")  && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
+                lsets[lsets.length - 1].nodes = range(setElements[0], setElements[1], setElements[2]);
+            }
+            else {
+                lsets[lsets.length - 1].nodes = [...lsets[lsets.length - 1].nodes, ...setElements];
+            }
+        }
+
+    }
+
+    return {nsets: nsets, lsets: lsets}
+
 }
 
 const getMaterialsData = (inpDataLines: Array<string>): Array<Material> => {
