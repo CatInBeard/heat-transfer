@@ -1,11 +1,19 @@
 import ClosablePopupContainer from "./closablePopup/ClosablePopup";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
-let UploadComponent = ( {cancelAction, fileType, confirmAction} ) => {
+let UploadComponent = ({ cancelAction, fileType, confirmAction }) => {
 
     const [buttonLoadingStatus, setButtonStatus] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadLabel, setLabelText] = useState("Upload your " + fileType + " file:");
+
+    const focusRef = useRef(null);
+
+    useEffect(() => {
+        if (focusRef.current) {
+            focusRef.current.focus();
+        }
+    }, []);
 
     const handleFileChange = (event) => {
         setLabelText("Upload your " + fileType + " file:");
@@ -13,23 +21,23 @@ let UploadComponent = ( {cancelAction, fileType, confirmAction} ) => {
     };
 
     const onUploadClick = () => {
-        if(selectedFile){
+        if (selectedFile) {
             setButtonStatus(true);
             confirmAction(selectedFile)
         }
-        else{
+        else {
             setLabelText(<i className="text-danger">You must select {fileType} file:</i>)
         }
     }
 
     return (
-        <ClosablePopupContainer cancelAction={cancelAction} headerText= {"Upload " + fileType + " file" } >
+        <ClosablePopupContainer cancelAction={cancelAction} headerText={"Upload " + fileType + " file"} >
 
             <div className="form-group">
                 <label htmlFor='fileinput' className="mb-2">
                     {uploadLabel}
                 </label>
-                <input accept=".inp" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
+                <input ref={focusRef} accept=".inp" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
             </div>
             <div className="form-group mt-2">
                 <button id='uploadButton' className='btn btn-primary' onClick={onUploadClick} disabled={buttonLoadingStatus}>
