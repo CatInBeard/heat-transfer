@@ -42,14 +42,16 @@ type Step = {
     name: string,
     jobType: string,
     stateType: string
-    boundaries: Array<Boundary>,
+    boundaries: {
+        temperature: Array<TemperatureBC>
+    } ,
 }
 
-type Boundary = {
+type TemperatureBC = {
     name: string,
     type: string,
     setName: string,
-    additionalData: Record<string, any>
+    temperature: number
 }
 
 function range(start: number, end: number, step: number = 1): Array<number> {
@@ -437,7 +439,7 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                     name: match[1],
                     stateType: "",
                     jobType: "",
-                    boundaries: [],
+                    boundaries: {temperature: []},
                 })
             } else {
                 throw new InpParsingError("Job name not found");
@@ -469,13 +471,25 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                 const regex: RegExp = /Name: (.*?) Type: (.*?)$/;
                 const matches: RegExpMatchArray | null = stepStrings[i - 1].match(regex);
 
+                let type =  '';
+
                 if (matches && matches.length === 3) {
-                    steps[steps.length - 1].boundaries.push({
-                        name: matches[1],
-                        type: matches[2],
-                        setName: "",
-                        additionalData: {}
-                    })
+
+                    type = matches[2];
+
+                    switch(type){
+                        case "Temperature":
+                        steps[steps.length - 1].boundaries.temperature.push({
+                            name: matches[1],
+                            type: matches[2],
+                            setName: "",
+                            temperature: 0
+                        })
+                        break;
+                        default:
+                            throw new InpParsingError("Unknown BC type!");
+                    }
+
                 } else {
                     throw new InpParsingError("Boundary name or type not found!");
                 }
@@ -485,12 +499,18 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                 }
 
 
-                let BCdata = stepStrings[i + 1].split(',').map(num => num.trim())
+                switch(type){
+                    case "Temperature":
+                    
+                    
+                    let BCdata = stepStrings[i + 1].split(',').map(num => num.trim())
 
-                steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].setName = BCdata[0]
+                    steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].setName = BCdata[0]
 
-                if (steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].type == "Temperature") {
-                    steps[steps.length - 1].boundaries[steps[steps.length - 1].boundaries.length - 1].additionalData.temperature = parseFloat(BCdata[BCdata.length - 1])
+                    steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].temperature = parseFloat(BCdata[BCdata.length - 1])
+                break;
+                    default:
+                        throw new InpParsingError("Unknown BC type!");
                 }
 
             }

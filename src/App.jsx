@@ -5,7 +5,7 @@ import { useState } from "react";
 import {
   toggleHint, toggleUpload, toggleBlockVisibility,
   setBlockTermalConductivity,
-  setAirTemperature, setWaterTemperature, saveInpData,
+  setBCTemperature, saveInpData,
   setcomputingStatus
 } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
@@ -20,16 +20,11 @@ let App = () => {
   const heat_transfer_status_text = useSelector((state) => state.values.heat_transfer_status_text)
   const hint_status = useSelector((state) => state.values.show_hint)
   const upload_status = useSelector((state) => state.values.show_upload)
-  const first_block_visibility = useSelector((state) => state.values.first_block_visibility)
-  const second_block_visibility = useSelector((state) => state.values.second_block_visibility)
-  const first_block_termal_conductivity = useSelector((state) => state.values.first_block_termal_conductivity)
-  const second_block_termal_conductivity = useSelector((state) => state.values.second_block_termal_conductivity)
-  const water_temperature = useSelector((state) => state.values.water_temperature)
-  const air_temperature = useSelector((state) => state.values.air_temperature)
   const inpData = useSelector((state) => state.values.inpData)
   const computingStatus = useSelector((state) => state.values.computingStatus)
   const blocksVisibility = useSelector((state) => state.values.blocks_visibility)
   const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
+  const temperaure_BC = useSelector((state) => state.values.temperaure_BC)
 
   const [errorPopup, setErrorPopup] = useState(null);
 
@@ -55,12 +50,10 @@ let App = () => {
     dispatch(setBlockTermalConductivity({ event: event.target.value, sectionName: sectionName }))
   };
 
-  const onAirTemperatureChange = (event) => {
-    dispatch(setAirTemperature({ event: event.target.value }))
-  };
 
-  const onWaterTemperatureChange = (event) => {
-    dispatch(setWaterTemperature({ event: event.target.value }))
+  const onBCTemperatureChange = (event) => {
+    const bcName = event.target.getAttribute('data-bc-name');
+    dispatch(setBCTemperature({ event: event.target.value, bcName: bcName }))
   };
 
 
@@ -104,6 +97,7 @@ let App = () => {
   }
 
   const canChangeSectionsSettings = computingStatus != "waiting" && inpData !== null;
+  const canChangeBC = computingStatus != "waiting" && inpData !== null;
 
   let blocksSettings = !canChangeSectionsSettings ?
   <div className='p-2'>
@@ -121,7 +115,7 @@ let App = () => {
     <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
 
   return <>
-  <div className='p-2'>
+  <div className='p-2' key={section.name}>
     <div className="row">
       <div className="col">
         {section.name}:
@@ -146,6 +140,36 @@ let App = () => {
   )}</>
 
 
+  const BCeditor = !canChangeBC ?
+  <div className='p-2'>
+    <div className="row">
+      <div className="col alert alert-info">
+        To change BC, first upload the file
+      </div>
+    </div>
+  </div> :
+  <>
+  {temperaure_BC.map( (boundary) =>{
+
+    return <div className='p-2 form-group'  key={boundary.name}>
+      <div className="row">
+        <div className='col'>
+          <label>{boundary.name}:</label>
+        </div>
+        <div className="col">
+          <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className='form-control'></input>
+        </div>
+        <div className="col">
+          &deg;K
+        </div>
+      </div>
+    </div>
+
+  })}
+  </>
+
+
+
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
   const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
@@ -161,7 +185,7 @@ let App = () => {
         <canvas id="canvas" width={1200} height={500}></canvas>
       </div>
       <div className='d-flex align-items-baseline'>
-        <div className='p-2 d-flex flex-column'>
+        <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>
             Сhange thermal conductivity coefficient
           </div>
@@ -169,36 +193,11 @@ let App = () => {
           {blocksSettings}
           
         </div>
-        <div className='p-2 d-flex flex-column'>
+        <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>
             Change temperature
           </div>
-          <div className='p-2 form-group'>
-            <div className="row">
-              <div className='col'>
-                <label>Water:</label>
-              </div>
-              <div className="col">
-                <input min={0} value={water_temperature} onChange={onWaterTemperatureChange} type='number' className='form-control'></input>
-              </div>
-              <div className="col">
-                &deg;K
-              </div>
-            </div>
-          </div>
-          <div className='p-2 form-group'>
-            <div className="row">
-              <div className='col'>
-                <label>Air:</label>
-              </div>
-              <div className="col">
-                <input min={0} value={air_temperature} type='number' onChange={onAirTemperatureChange} className='form-control'></input>
-              </div>
-              <div className="col">
-                &deg;K
-              </div>
-            </div>
-          </div>
+          {BCeditor}
         </div>
         <div className='p-2 d-flex flex-column'>
           <div className='p-2'>Load data</div>

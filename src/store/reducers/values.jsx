@@ -9,8 +9,7 @@ const valuesSlice = createSlice({
     show_upload: false,
     blocks_visibility: {},
     blocks_termal_conductivity: {},
-    water_temperature: 273.15,
-    air_temperature: 273.15,
+    temperaure_BC: [],
     computingStatus: "waiting",
     inpData: null
   },
@@ -31,12 +30,6 @@ const valuesSlice = createSlice({
           [sectionName]: value
         }
       };
-    },
-    setAirTemperature: (state, action) => {
-      state.air_temperature = action.payload.value
-    },
-    setWaterTemperature: (state, action) => {
-      state.water_temperature = action.payload.value
     },
     toggleHint: (state, action) => {
       state.show_hint = !state.show_hint 
@@ -63,7 +56,7 @@ const valuesSlice = createSlice({
 
         
         let material = state.inpData.materials.find((material) => material.name == section.material)
-        
+
         if(material){
           state.blocks_termal_conductivity[section.name] = material.conductivity
         }
@@ -73,13 +66,32 @@ const valuesSlice = createSlice({
         
 
       });
+      state.inpData.steps[0].boundaries.temperature.forEach(bc => {
+        state.temperaure_BC.push(bc)
+      });
+    },
+    setBCTemperature: (state, action) => {
+
+      return produce(state, draftState => {
+        const bcName = action.payload.bcName;
+        const value = action.payload.value;
+        
+        const boundaryIndex = draftState.temperaure_BC.findIndex(
+          boundary => boundary.name === bcName
+        );
+
+        if (boundaryIndex !== -1) {
+          draftState.temperaure_BC[boundaryIndex].temperature = value;
+        }
+
+      });
     },
   },
 })
 
 export const { toggleHint,setHeatTranserStatus, toggleUpload,
   toggleBlockVisibility, setBlockTermalConductivity,
-  setAirTemperature, setWaterTemperature,
+  setBCTemperature,
   saveInpData, setcomputingStatus } = valuesSlice.actions
 
 export default valuesSlice.reducer
