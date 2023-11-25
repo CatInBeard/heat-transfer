@@ -13,6 +13,7 @@ import UploadComponent from './components/UploadComponent.jsx';
 import { parseInpText, checkInpDataForHeatTransfer } from './inpParse.tsx';
 import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
+import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh } from "./store/reducers/canvas.jsx"
@@ -237,7 +238,7 @@ let App = () => {
       {upload_component}
       {error_component}
       <div className={style.scrollable}>
-        <canvas id="canvas" width={1200} height={500} ref={canvasRef}></canvas>
+        <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
       </div>
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column col-3'>
