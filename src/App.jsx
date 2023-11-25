@@ -1,7 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   toggleHint, toggleUpload, toggleBlockVisibility,
   setBlockTermalConductivity,
@@ -14,6 +14,8 @@ import { parseInpText, checkInpDataForHeatTransfer } from './inpParse.tsx';
 import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
+import { convertInpDataToMesh } from "./mesh.tsx"
+import { setMesh } from "./store/reducers/canvas.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -25,8 +27,61 @@ let App = () => {
   const blocksVisibility = useSelector((state) => state.values.blocks_visibility)
   const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
   const temperaure_BC = useSelector((state) => state.values.temperaure_BC)
+  const Mesh = useSelector((state) => state.canvas.mesh)
 
   const [errorPopup, setErrorPopup] = useState(null);
+
+
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+
+    const canvas = canvasRef.current;
+
+    if (inpData !== null) {
+      let Mesh = convertInpDataToMesh(inpData, canvas.height, canvas.width)
+      dispatch(setMesh({ Mesh: Mesh }));
+    }
+
+  }, [inpData]);
+
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (Mesh) {
+
+      const pointSize = 0.8;
+      const lineSize = 0.05;
+
+      Mesh.points.forEach(point => {
+
+        ctx.beginPath();
+        ctx.arc(
+          (point.x + Mesh.offset_x) * Mesh.scale,
+          canvas.height - (point.y + Mesh.offset_y) * Mesh.scale,
+          (pointSize / 2) * Mesh.scale,
+          0,
+          2 * Math.PI
+        );
+        ctx.fill();
+        ctx.closePath();
+
+      });
+
+      Mesh.lines.forEach(line => {
+        ctx.beginPath();
+        ctx.moveTo((line.start_x + Mesh.offset_x) * Mesh.scale,canvas.height - (line.start_y + Mesh.offset_y) * Mesh.scale);
+        ctx.lineTo((line.end_x + Mesh.offset_x) * Mesh.scale,canvas.height - (line.end_y + Mesh.offset_y) * Mesh.scale);
+        ctx.lineWidth = lineSize * Mesh.scale;
+        ctx.stroke();
+      })
+    }
+
+
+  }, [Mesh]);
 
 
   const canStartComputing = computingStatus == "ready";
@@ -60,7 +115,7 @@ let App = () => {
 
   const toggleBlock = (event) => {
     const sectionName = event.target.getAttribute('data-section-name');
-    dispatch(toggleBlockVisibility({sectionName: sectionName}))
+    dispatch(toggleBlockVisibility({ sectionName: sectionName }))
   }
 
 
@@ -100,73 +155,73 @@ let App = () => {
   const canChangeBC = computingStatus != "waiting" && inpData !== null;
 
   let blocksSettings = !canChangeSectionsSettings ?
-  <div className='p-2'>
-    <div className="row">
-      <div className="col alert alert-info">
-        To change settings, first upload the file
+    <div className='p-2'>
+      <div className="row">
+        <div className="col alert alert-info">
+          To change settings, first upload the file
+        </div>
       </div>
-    </div>
-  </div>: <>
-  {inpData.problemData[0].sections.map( (section) =>{
+    </div> : <>
+      {inpData.problemData[0].sections.map((section) => {
 
-    let block_visibility = !blocksVisibility[section.name]
-    let block_termal_conductivity = blocks_termal_conductivity[section.name];
-    let Button = block_visibility ? <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-success'><nobr data-section-name={section.name}>Show</nobr></button> :
-    <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
+        let block_visibility = !blocksVisibility[section.name]
+        let block_termal_conductivity = blocks_termal_conductivity[section.name];
+        let Button = block_visibility ? <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-success'><nobr data-section-name={section.name}>Show</nobr></button> :
+          <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
 
-  return <>
-  <div className='p-2' key={section.name}>
-    <div className="row">
-      <div className="col">
-        {section.name}:
-      </div>
-      <div className="col">
-        {Button}
-      </div>
-    </div>
-  </div>
-  <div className='p-2 form-group row'>
-    <div className="row">
-      <div className="col">
-        <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className='form-control'></input>
-      </div>
-      <div className='col'>
-        <label>W/mK</label>
-      </div>
-    </div>
-  </div>
-  </>
-  }
-  )}</>
+        return <>
+          <div className='p-2' key={section.name}>
+            <div className="row">
+              <div className="col">
+                {section.name}:
+              </div>
+              <div className="col">
+                {Button}
+              </div>
+            </div>
+          </div>
+          <div className='p-2 form-group row'>
+            <div className="row">
+              <div className="col">
+                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className='form-control'></input>
+              </div>
+              <div className='col'>
+                <label>W/mK</label>
+              </div>
+            </div>
+          </div>
+        </>
+      }
+      )}</>
 
 
   const BCeditor = !canChangeBC ?
-  <div className='p-2'>
-    <div className="row">
-      <div className="col alert alert-info">
-        To change BC, first upload the file
-      </div>
-    </div>
-  </div> :
-  <>
-  {temperaure_BC.map( (boundary) =>{
-
-    return <div className='p-2 form-group'  key={boundary.name}>
+    <div className='p-2'>
       <div className="row">
-        <div className='col'>
-          <label>{boundary.name}:</label>
-        </div>
-        <div className="col">
-          <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className='form-control'></input>
-        </div>
-        <div className="col">
-          &deg;K
+        <div className="col alert alert-info">
+          To change BC, first upload the file
         </div>
       </div>
-    </div>
+    </div> :
+    <>
+      {temperaure_BC.map((boundary) => {
 
-  })}
-  </>
+        return <div className='p-2 form-group' key={boundary.name}>
+          <div className="row">
+            <div className='col'>
+              <label>{boundary.name}:</label>
+            </div>
+            <div className="col">
+              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className='form-control'></input>
+            </div>
+            <div className="col">
+              &deg;K
+            </div>
+          </div>
+        </div>
+
+      })}
+    </>
 
 
 
@@ -182,16 +237,16 @@ let App = () => {
       {upload_component}
       {error_component}
       <div className={style.scrollable}>
-        <canvas id="canvas" width={1200} height={500}></canvas>
+        <canvas id="canvas" width={1200} height={500} ref={canvasRef}></canvas>
       </div>
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>
             Сhange thermal conductivity coefficient
           </div>
-          
+
           {blocksSettings}
-          
+
         </div>
         <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>
