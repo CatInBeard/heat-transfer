@@ -51,6 +51,9 @@ const valuesSlice = createSlice({
     saveInpData: (state, action) => {
       state.inpData = action.payload.data
       state.blocks_visibility = []
+
+      state.blocks_visibility = []
+      state.blocks_termal_conductivity = []
       state.inpData.problemData[0].sections.forEach( section => {
         state.blocks_visibility[section.name] = true
 
@@ -66,6 +69,7 @@ const valuesSlice = createSlice({
         
 
       });
+      state.temperaure_BC = [];
       state.inpData.steps[0].boundaries.temperature.forEach(bc => {
         state.temperaure_BC.push(bc)
       });
