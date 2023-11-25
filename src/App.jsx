@@ -197,13 +197,7 @@ let App = () => {
 
 
   const BCeditor = !canChangeBC ?
-    <div className='p-2'>
-      <div className="row">
-        <div className="col alert alert-info">
-          To change BC, first upload the file
-        </div>
-      </div>
-    </div> :
+    <></> :
     <>
       {temperaure_BC.map((boundary) => {
 
