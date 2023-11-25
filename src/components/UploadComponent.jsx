@@ -7,16 +7,20 @@ let UploadComponent = ({ cancelAction, fileType, confirmAction }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadLabel, setLabelText] = useState("Upload your " + fileType + " file:");
 
-    const focusRef = useRef(null);
+    const inputRef = useRef(null);
+    const submitRef = useRef(null);
 
     useEffect(() => {
-        if (focusRef.current) {
-            focusRef.current.focus();
+        if (inputRef.current) {
+            inputRef.current.focus();
         }
     }, []);
 
     const handleFileChange = (event) => {
         setLabelText("Upload your " + fileType + " file:");
+        if (submitRef.current) {
+            submitRef.current.focus();
+        }
         setSelectedFile(event.target.files[0]);
     };
 
@@ -37,10 +41,10 @@ let UploadComponent = ({ cancelAction, fileType, confirmAction }) => {
                 <label htmlFor='fileinput' className="mb-2">
                     {uploadLabel}
                 </label>
-                <input ref={focusRef} accept=".inp" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
+                <input ref={inputRef} accept=".inp" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
             </div>
             <div className="form-group mt-2">
-                <button id='uploadButton' className='btn btn-primary' onClick={onUploadClick} disabled={buttonLoadingStatus}>
+                <button ref={submitRef} className='btn btn-primary' onClick={onUploadClick} disabled={buttonLoadingStatus}>
                     {buttonLoadingStatus ? "Loading..." : "Upload"}
                 </button>
             </div>
