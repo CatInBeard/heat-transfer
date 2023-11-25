@@ -489,7 +489,7 @@ const getMaterialsData = (inpDataLines: Array<string>): Array<Material> => {
     }
 
     for (let i: number = 0; i < materials.length; i++) {
-        if (materials[i].conductivity < 0 || materials[i].density < 0 || materials[i].specificHeat < 0) {
+        if (materials[i].conductivity < 0) {
             throw new InpParsingError("Material must have conductivity, density and specific heat parametrs");
         }
     }
