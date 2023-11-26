@@ -22,7 +22,8 @@ const valuesSlice = createSlice({
     },
     setBlockTermalConductivity: (state, action) => {
       const sectionName = action.payload.sectionName
-      const value = action.payload.value
+      const value = action.payload.event
+
       return {
         ...state,
         blocks_termal_conductivity: {
