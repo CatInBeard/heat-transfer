@@ -21,7 +21,7 @@ type Nset = {
 
 type Lset = {
     setname: string
-    nodes: Array<number>
+    elements: Array<number>
 }
 
 type Section = {
@@ -265,7 +265,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
             } else {
                 throw new InpParsingError("Set name not found");
             }
-            lsets.push({ setname: name, nodes: [] });
+            lsets.push({ setname: name, elements: [] });
             continue;
         }
         if (nodeParsingFlag) {
@@ -288,10 +288,10 @@ const parsePartLines = (part: Array<string>): partProblem => {
         if (lsetFlag) {
             let setElements = part[i].split(',').map(num => parseFloat(num.trim()))
             if (setElements.length == 3 && part[i - 1].startsWith("*Elset") && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
-                lsets[lsets.length - 1].nodes = range(setElements[0], setElements[1], setElements[2]);
+                lsets[lsets.length - 1].elements = range(setElements[0], setElements[1], setElements[2]);
             }
             else {
-                lsets[lsets.length - 1].nodes = [...lsets[lsets.length - 1].nodes, ...setElements];
+                lsets[lsets.length - 1].elements = [...lsets[lsets.length - 1].elements, ...setElements];
             }
         }
 
@@ -424,7 +424,7 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
             } else {
                 throw new InpParsingError("Set name not found");
             }
-            lsets.push({ setname: name, nodes: [] });
+            lsets.push({ setname: name, elements: [] });
             continue;
         }
         if (nsetFlag) {
@@ -439,10 +439,10 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
         if (lsetFlag) {
             let setElements = assemblyStrings[i].split(',').map(num => parseFloat(num.trim()))
             if (setElements.length == 3 && assemblyStrings[i - 1].startsWith("*Elset")  && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
-                lsets[lsets.length - 1].nodes = range(setElements[0], setElements[1], setElements[2]);
+                lsets[lsets.length - 1].elements = range(setElements[0], setElements[1], setElements[2]);
             }
             else {
-                lsets[lsets.length - 1].nodes = [...lsets[lsets.length - 1].nodes, ...setElements];
+                lsets[lsets.length - 1].elements = [...lsets[lsets.length - 1].elements, ...setElements];
             }
         }
 
@@ -634,4 +634,4 @@ const checkInpDataForHeatTransfer = (inpDataLines) => {
     }
 }
 
-export { parseInpText, checkInpDataForHeatTransfer, InpParsingError }
+export { parseInpText, checkInpDataForHeatTransfer, InpParsingError, Lset, Section }
