@@ -16,7 +16,7 @@ import style from "./App.module.css"
 import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
-import { setMesh } from "./store/reducers/canvas.jsx"
+import { setMesh, toggleGridVisibility } from "./store/reducers/canvas.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -29,6 +29,7 @@ let App = () => {
   const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
   const temperaure_BC = useSelector((state) => state.values.temperaure_BC)
   const Mesh = useSelector((state) => state.canvas.mesh)
+  const gridVisible = useSelector((state) => state.canvas.gridVisible)
 
   const [errorPopup, setErrorPopup] = useState(null);
 
@@ -52,7 +53,7 @@ let App = () => {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (Mesh) {
+    if (Mesh && gridVisible) {
 
       const pointSize = 0.8;
       const lineSize = 0.05;
@@ -82,7 +83,7 @@ let App = () => {
     }
 
 
-  }, [Mesh]);
+  }, [Mesh, gridVisible]);
 
 
   const canStartComputing = computingStatus == "ready";
@@ -148,12 +149,26 @@ let App = () => {
     reader.readAsText(file);
   }
 
+  const toggleGrid = () => {
+    dispatch(toggleGridVisibility())
+  }
+
   const closeError = () => {
     setErrorPopup(null);
   }
 
   const canChangeSectionsSettings = computingStatus != "waiting" && inpData !== null;
   const canChangeBC = computingStatus != "waiting" && inpData !== null;
+  const canChangeGridVisibility = Boolean(Mesh);
+
+
+  let gridSettingsButton = !canChangeGridVisibility ? <></> : ( gridVisible ?
+  <div className='p-2'>
+    <button onClick={toggleGrid} className='btn btn-secondary'>Hide grid</button>
+  </div> : 
+  <div className='p-2'>
+    <button onClick={toggleGrid} className='btn btn-primary'>Show grid</button>
+  </div>)
 
   let blocksSettings = !canChangeSectionsSettings ?
     <div className='p-2'>
@@ -270,6 +285,7 @@ let App = () => {
           <div className='p-2'>
             <button disabled={!canStartComputing} className='btn btn-lg btn-primary'>Start</button>
           </div>
+          {gridSettingsButton}
         </div>
 
       </div>
