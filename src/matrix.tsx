@@ -30,21 +30,45 @@ const SumMatrix = (A: number[][], B: number[][]): number[][] => {
     return C;
 }
 
-const MultiplyMatrixToRow = (A: number[][], B: number[]) => {
-    let rowsA = A.length;
-    let rowsB = B.length;
+const MultiplyMatrix = (A: number[][], B: number[][]): number[][] => {
+    const rows1 = A.length;
+    const cols1 = A[0].length;
+    const cols2 = B[0].length;
 
-    let C = new Array(rowsA);
+    if (cols1 !== B.length) {
+        throw new Error("The number of columns in the first matrix must match the number of rows in the second matrix.");
+    }
 
-    for (let i = 0; i < rowsA; i++) {
-        let t = 0;
-        for (let j = 0; j < rowsB; j++) {
-            t += A[i][j] * B[j];
+    const C: number[][] = [];
+
+    for (let i = 0; i < rows1; i++) {
+        C[i] = [];
+        for (let j = 0; j < cols2; j++) {
+            let sum = 0;
+            for (let k = 0; k < cols1; k++) {
+                sum += A[i][k] * B[k][j];
+            }
+            C[i][j] = sum;
         }
-        C[i] = t;
     }
 
     return C;
+}
+
+const multiplyMatrixByNumber = (matrix: number[][], number: number): number[][] => {
+    const rows = matrix.length;
+    const cols = matrix[0].length;
+
+    const result: number[][] = [];
+
+    for (let i = 0; i < rows; i++) {
+        result[i] = [];
+        for (let j = 0; j < cols; j++) {
+            result[i][j] = matrix[i][j] * number;
+        }
+    }
+
+    return result;
 }
 
 const InverseMatrix = (A: number[][]) => { // LU inverse matrix
@@ -54,7 +78,7 @@ const InverseMatrix = (A: number[][]) => { // LU inverse matrix
 
     const n = A.length;
     const identity = Array(n);
-    const inverse =  Array(n);
+    const inverse = Array(n);
 
     for (let i = 0; i < n; i++) {
         identity[i] = [];
@@ -132,4 +156,4 @@ const luDecomposition = (matrix: number[][]): LU => {
 
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrixToRow, InverseMatrix }
+export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber }
