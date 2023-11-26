@@ -1,40 +1,62 @@
 import { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber } from "./matrix.tsx";
-import { Lset, Section } from "./inpParse"
+import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
 
 
 const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity) => {
 
     let K = getConductivityMatrix(inpData, blocks_termal_conductivity);
 
+    K = applyTemperatureBC(K, inpData);
+
     console.log(K)
 
+}
 
+const applyTemperatureBC = (K: Array<Array<number>>, inpData): Array<Array<number>> => {
 
+    inpData.steps[0].boundaries.temperature.forEach( (temperature: TemperatureBC) => {
+        let setName = temperature.setName
+        let nset: Nset|undefined =inpData.assembly.nsets.find( (nset: Nset) => {
+            return nset.setname == setName;
+        });
+        if(!nset){
+            throw new Error("Nset not found");
+        }
 
+        nset.nodes.forEach( (node) => {
+            for(let i =0; i< K.length; i++){
+                K[i][node-1] = 0
+                K[node-1][i] = 0
+                K[node-1][node-1] = 1
+            }
+        })
+    });
 
+    
+    return K;
 }
 
 const getConductivityByElement = (element: number, blocks_termal_conductivity, lsets: Lset[], sections: Section[]): number => {
 
-    let lsetIndex = lsets.findIndex((elset) => {
+    let lset = lsets.find((elset) => {
         return elset.elements.indexOf(element) != -1;
     })
-    if (lsetIndex == -1) {
+    if (!lset) {
         throw new Error("Element not in elset");
     }
-    let lsetName: string = lsets[lsetIndex].setname;
-    let sectionIndex = sections.findIndex((section) => {
+    let lsetName: string = lset.setname;
+    let section = sections.find((section) => {
         return section.elsetName == lsetName
     })
-    if (sectionIndex == -1) {
+    if (!section) {
         throw new Error("Elset not in section");
     }
-    let sectionName = sections[sectionIndex].name;
+    let sectionName = section.name;
 
     return blocks_termal_conductivity[sectionName] ?? 0;
 }
 
-const getConductivityMatrix = (inpData, blocks_termal_conductivity) => {
+const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array<number>> => {
 
     let nodes = inpData.problemData[0].nodes;
     let elements = inpData.problemData[0].elements;
@@ -82,7 +104,7 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity) => {
         globalCondictivityMatrix = accumulateToGlobalMatrix(globalCondictivityMatrix, localCondictivityMatrix, element[1], element[2], element[3])
 
     }
-    return globalCondictivityMatrix
+    return globalCondictivityMatrix;
 }
 
 const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatrix: Array<Array<number>>, i: number, j: number, k: number): Array<Array<number>> => {

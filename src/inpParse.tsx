@@ -634,4 +634,4 @@ const checkInpDataForHeatTransfer = (inpDataLines) => {
     }
 }
 
-export { parseInpText, checkInpDataForHeatTransfer, InpParsingError, Lset, Section }
+export { parseInpText, checkInpDataForHeatTransfer, InpParsingError, Lset, Nset, Section, TemperatureBC }
