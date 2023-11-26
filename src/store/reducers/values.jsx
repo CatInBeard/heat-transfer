@@ -9,7 +9,7 @@ const valuesSlice = createSlice({
     show_upload: false,
     blocks_visibility: {},
     blocks_termal_conductivity: {},
-    temperaure_BC: [],
+    temperature_BC: [],
     computingStatus: "waiting",
     inpData: null
   },
@@ -69,9 +69,9 @@ const valuesSlice = createSlice({
         
 
       });
-      state.temperaure_BC = [];
+      state.temperature_BC = [];
       state.inpData.steps[0].boundaries.temperature.forEach(bc => {
-        state.temperaure_BC.push(bc)
+        state.temperature_BC.push(bc)
       });
     },
     setBCTemperature: (state, action) => {
@@ -80,12 +80,12 @@ const valuesSlice = createSlice({
         const bcName = action.payload.bcName;
         const value = action.payload.value;
         
-        const boundaryIndex = draftState.temperaure_BC.findIndex(
+        const boundaryIndex = draftState.temperature_BC.findIndex(
           boundary => boundary.name === bcName
         );
 
         if (boundaryIndex !== -1) {
-          draftState.temperaure_BC[boundaryIndex].temperature = value;
+          draftState.temperature_BC[boundaryIndex].temperature = value;
         }
 
       });

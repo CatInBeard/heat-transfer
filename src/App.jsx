@@ -27,7 +27,7 @@ let App = () => {
   const computingStatus = useSelector((state) => state.values.computingStatus)
   const blocksVisibility = useSelector((state) => state.values.blocks_visibility)
   const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
-  const temperaure_BC = useSelector((state) => state.values.temperaure_BC)
+  const temperature_BC = useSelector((state) => state.values.temperature_BC)
   const Mesh = useSelector((state) => state.canvas.mesh)
   const gridVisible = useSelector((state) => state.canvas.gridVisible)
 
@@ -214,7 +214,7 @@ let App = () => {
   const BCeditor = !canChangeBC ?
     <></> :
     <>
-      {temperaure_BC.map((boundary) => {
+      {temperature_BC.map((boundary) => {
 
         return <div className='p-2 form-group' key={boundary.name}>
           <div className="row">
