@@ -17,6 +17,7 @@ import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility } from "./store/reducers/canvas.jsx"
+import { computeSteadyState } from './computeHeatTransfer.tsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -86,7 +87,7 @@ let App = () => {
   }, [Mesh, gridVisible]);
 
 
-  const canStartComputing = computingStatus == "ready";
+  const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
 
   const statusData = inpData ?
     <div className='p-2'>
@@ -155,6 +156,21 @@ let App = () => {
 
   const closeError = () => {
     setErrorPopup(null);
+  }
+
+
+  const startComputing = () => {
+    dispatch(setcomputingStatus({ status: "computing" }))
+
+    setTimeout( () => {
+      try{
+        computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+      }
+      catch (error) {
+        setErrorPopup({ title: "Error computing", text: error.message });
+      }
+      dispatch(setcomputingStatus({ status: "computed" }))
+    }, 100)
   }
 
   const canChangeSectionsSettings = computingStatus != "waiting" && inpData !== null;
@@ -283,7 +299,7 @@ let App = () => {
           <div className='p-2'>Status: <b>{getStatusText(computingStatus)}</b></div>
           {statusData}
           <div className='p-2'>
-            <button disabled={!canStartComputing} className='btn btn-lg btn-primary'>Start</button>
+            <button disabled={!canStartComputing} onClick={startComputing} className='btn btn-lg btn-primary'>Start</button>
           </div>
           {gridSettingsButton}
         </div>

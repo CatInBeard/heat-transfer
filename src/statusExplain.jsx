@@ -7,6 +7,10 @@ const getStatusText = (status) => {
             return "Loading .inp file"
         case "ready":
             return "Ready to compute"
+        case "computing":
+            return "Computing, please wait"
+        case "computed":
+            return "Computing finished"
         default:
             return "Error"
     }
