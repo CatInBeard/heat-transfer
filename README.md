@@ -12,24 +12,23 @@ This project is licensed under the terms of the MIT License. See the [LICENSE](L
 To get started with heat-transfer, follow these steps:
 
 1. Clone the repository:  
-
   ```git clone https://github.com/CatInBeard/heat-transfer.git```
 
 2. Move to project directory :   
-
 ```cd heat-transfer```
 
 3. Install dependencies:  
-
 ```npm i```
 
 4. Run localhost dev verison:  
-
 ```npm start```
 
 5. Build static production version:  
-
 ```npm run build```
+
+6. Docker build  
+If you have installed docker, you can build project with deploy.sh:  
+```deploy.sh```
 
 ### Deploy on github pages
 
