@@ -31,6 +31,10 @@ To get started with heat-transfer, follow these steps:
 
 ```npm run build```
 
+### Deploy on github pages
+
+The gh-pages-deploy workflow automatically builds the project and creates a build copy in the gh-pages branch. To allow the workflow to push to the gh-pages branch, you should go to the repository settings -> Actions -> General -> Workflow permissions and set Read and Write permissions. Next, you need to go to the repository settings -> Pages and set: Source: Deploy from a branch, Branch: gh-pages, /root.
+
 ## Demo
-You can try application [here](https://heat-transfer.newpage.xyz).  
+You can try application [here](https://catinbeard.github.io/heat-transfer/).  
 If you need .inp file for testing, you can get it in [fixtures folder](fixtures)
