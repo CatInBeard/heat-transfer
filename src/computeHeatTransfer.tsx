@@ -1,4 +1,4 @@
-import { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, solveLinearEquationSystem, multiplyMatrixByNumber } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
 
 
@@ -8,31 +8,72 @@ const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity)
 
     K = applyTemperatureBC(K, inpData);
 
-    console.log(K)
+    let F = getTermalForcesFromBC(inpData, temperature_BC);
+
+    let temperatures = solveLinearEquationSystem(K,F);
+
+    return temperatures
 
 }
 
+
+const getTermalForcesFromBC = (inpData, temperature_BC): number[] => {
+    let length = inpData.problemData[0].nodes.length;
+
+    let F: number[] = Array(length);
+    for (let i = 0; i < length; i++) {
+        F[i] = 0;
+    }
+
+    for (let i = 0; i < temperature_BC.length; i++) {
+        let BC: TemperatureBC = temperature_BC[i];
+
+        let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
+
+        for (let i = 0; i < nodes.length; i++) {
+            let node: number = nodes[i];
+            F[node- 1] = BC.temperature;
+        }
+
+    }
+
+    return F;
+}
+
+const getNodesByAssemblySetName = (setName: string, inpData): number[] => {
+
+    let nset: Nset | undefined = inpData["assembly"].nsets.find((nset: Nset) => {
+        return nset.setname == setName
+    });
+    if (!nset) {
+        throw new Error("Set not found")
+    }
+
+    return nset.nodes
+}
+
+
 const applyTemperatureBC = (K: Array<Array<number>>, inpData): Array<Array<number>> => {
 
-    inpData.steps[0].boundaries.temperature.forEach( (temperature: TemperatureBC) => {
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBC) => {
         let setName = temperature.setName
-        let nset: Nset|undefined =inpData.assembly.nsets.find( (nset: Nset) => {
+        let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
             return nset.setname == setName;
         });
-        if(!nset){
+        if (!nset) {
             throw new Error("Nset not found");
         }
 
-        nset.nodes.forEach( (node) => {
-            for(let i =0; i< K.length; i++){
-                K[i][node-1] = 0
-                K[node-1][i] = 0
-                K[node-1][node-1] = 1
+        nset.nodes.forEach((node) => {
+            for (let i = 0; i < K.length; i++) {
+                K[node - 1][i] = 0
+                // K[i][node - 1] = 0
+                K[node - 1][node - 1] = 1
             }
         })
     });
 
-    
+
     return K;
 }
 
@@ -68,11 +109,10 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
             globalCondictivityMatrix[i][j] = 0;
         }
     }
-
+    
     for (let i = 0; i < elements.length; i++) {
 
         let element: Array<number> = elements[i];
-
 
         let Xi: number = nodes[element[1] - 1][1];
         let Yi: number = nodes[element[1] - 1][2];
@@ -82,7 +122,7 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
         let Yk: number = nodes[element[3] - 1][2];
 
         let area: number = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
-
+        
         let Bi: number = Yj - Yk
         let Bj: number = Yk - Yi
         let Bk: number = Yi - Yj
@@ -92,16 +132,30 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
 
         let gradientMatrix: Array<Array<number>> = [[Bi, Bj, Bk], [Ci, Cj, Ck]]
 
+        
 
         let conductivity = getConductivityByElement(element[0], blocks_termal_conductivity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
 
+        
+
         let materialPropertiesMatrix = [[conductivity, 0], [0, conductivity]]
 
-        MultiplyMatrix(transposeMatrix(gradientMatrix), materialPropertiesMatrix)
+        
 
-        let localCondictivityMatrix: Array<Array<number>> = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(gradientMatrix), materialPropertiesMatrix), gradientMatrix), 0.25 * area)
+        let localCondictivityMatrix: Array<Array<number>> = multiplyMatrixByNumber(
+            MultiplyMatrix(
+                MultiplyMatrix(
+                    transposeMatrix(gradientMatrix),
+                    materialPropertiesMatrix
+                ),
+                gradientMatrix
+            ),
+             0.25 * area
+        )
+        
 
         globalCondictivityMatrix = accumulateToGlobalMatrix(globalCondictivityMatrix, localCondictivityMatrix, element[1], element[2], element[3])
+
 
     }
     return globalCondictivityMatrix;

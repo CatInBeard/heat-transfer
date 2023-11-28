@@ -154,6 +154,31 @@ const luDecomposition = (matrix: number[][]): LU => {
     return { lower: lower, upper: upper };
 }
 
+const solveLinearEquationSystem = (A: number[][], b: number[]): number[] => {
+    const LU = luDecomposition(A);
+    const n = A.length;
+    const y: number[] = [];
+    const x: number[] = [];
+
+    for (let i = 0; i < n; i++) {
+        let sum = 0;
+        for (let j = 0; j < i; j++) {
+            sum += LU.lower[i][j] * y[j];
+        }
+        y[i] = (b[i] - sum) / LU.lower[i][i];
+    }
+
+    for (let i = n - 1; i >= 0; i--) {
+        let sum = 0;
+        for (let j = i + 1; j < n; j++) {
+            sum += LU.upper[i][j] * x[j];
+        }
+        x[i] = (y[i] - sum) / LU.upper[i][i];
+    }
+
+    return x;
+}
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber }
+
+export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem }

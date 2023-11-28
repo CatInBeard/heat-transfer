@@ -164,7 +164,9 @@ let App = () => {
 
     setTimeout( () => {
       try{
-        computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+        let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+
+        console.log(temperatures);
       }
       catch (error) {
         setErrorPopup({ title: "Error computing", text: error.message });

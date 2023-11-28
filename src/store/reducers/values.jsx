@@ -79,7 +79,7 @@ const valuesSlice = createSlice({
 
       return produce(state, draftState => {
         const bcName = action.payload.bcName;
-        const value = action.payload.value;
+        const value = action.payload.event;
         
         const boundaryIndex = draftState.temperature_BC.findIndex(
           boundary => boundary.name === bcName
