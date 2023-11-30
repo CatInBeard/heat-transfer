@@ -110,10 +110,6 @@ const drawGradientTriangle = (points: TemperaturePoint[], canvas: HTMLCanvasElem
     let color3: Color = temperatureToColor(points[2].temperature, minT, maxT);
     const gradient = ctx.createLinearGradient(points[0].x, points[0].y, points[2].x, points[2].y);
 
-    let colorText1 = 'rgb(' + color1.r + ', ' + color1.g + ', ' + color1.b + ')';
-
-    debugger
-
     gradient.addColorStop(0, 'rgb(' + color1.r + ', ' + color1.g + ', ' + color1.b + ')');
     gradient.addColorStop(0.5, 'rgb(' + color2.r + ', ' + color2.g + ', ' + color2.b + ')');
     gradient.addColorStop(1, 'rgb(' + color3.r + ', ' + color3.g + ', ' + color3.b + ')');
@@ -142,8 +138,6 @@ const temperatureToColor = (T: number, minTemp: number = 10, maxTemp: number = 2
     const blue = (1 - normalizedTemp) * 255;
     const red = normalizedTemp * 255;
     const green = 0;
-    
-    debugger
 
     return { r: red, g: green, b: blue, a: 255 }
 }
