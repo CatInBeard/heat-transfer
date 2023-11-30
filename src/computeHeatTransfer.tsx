@@ -1,6 +1,12 @@
 import { transposeMatrix, MultiplyMatrix, solveLinearEquationSystem, multiplyMatrixByNumber } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
 
+type TemperaturedNode = {
+    x: number,
+    y: number,
+    temperature: number
+}
+
 
 const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity) => {
 

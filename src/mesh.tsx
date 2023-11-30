@@ -108,4 +108,4 @@ const findMinMaxCoordinates = (points: Array<Point>): MinMax => {
 }
 
 
-export { convertInpDataToMesh };
+export { convertInpDataToMesh, Mesh };

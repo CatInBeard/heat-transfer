@@ -16,8 +16,9 @@ import style from "./App.module.css"
 import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
-import { setMesh, toggleGridVisibility } from "./store/reducers/canvas.jsx"
+import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
 import { computeSteadyState } from './computeHeatTransfer.tsx';
+import { drawMesh, drawTemperatureMap } from './draw.tsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -31,6 +32,7 @@ let App = () => {
   const temperature_BC = useSelector((state) => state.values.temperature_BC)
   const Mesh = useSelector((state) => state.canvas.mesh)
   const gridVisible = useSelector((state) => state.canvas.gridVisible)
+  const nodesTemperature = useSelector((state) => state.canvas.nodesTemperature)
 
   const [errorPopup, setErrorPopup] = useState(null);
 
@@ -50,41 +52,25 @@ let App = () => {
 
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (Mesh && gridVisible) {
+      if (Mesh && nodesTemperature) {
+        drawTemperatureMap(Mesh, nodesTemperature, inpData, canvasRef.current)
+      }
 
-      const pointSize = 0.8;
-      const lineSize = 0.05;
+      if (Mesh && gridVisible) {
 
-      Mesh.points.forEach(point => {
+        drawMesh(Mesh, canvasRef.current);
 
-        ctx.beginPath();
-        ctx.arc(
-          (point.x + Mesh.offset_x) * Mesh.scale,
-          canvas.height - (point.y + Mesh.offset_y) * Mesh.scale,
-          (pointSize / 2) * Mesh.scale,
-          0,
-          2 * Math.PI
-        );
-        ctx.fill();
-        ctx.closePath();
-
-      });
-
-      Mesh.lines.forEach(line => {
-        ctx.beginPath();
-        ctx.moveTo((line.start_x + Mesh.offset_x) * Mesh.scale,canvas.height - (line.start_y + Mesh.offset_y) * Mesh.scale);
-        ctx.lineTo((line.end_x + Mesh.offset_x) * Mesh.scale,canvas.height - (line.end_y + Mesh.offset_y) * Mesh.scale);
-        ctx.lineWidth = lineSize * Mesh.scale;
-        ctx.stroke();
-      })
+      }
+      
     }
 
 
-  }, [Mesh, gridVisible]);
+  }, [Mesh, gridVisible, blocksVisibility, nodesTemperature]);
 
 
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
@@ -162,11 +148,12 @@ let App = () => {
   const startComputing = () => {
     dispatch(setcomputingStatus({ status: "computing" }))
 
-    setTimeout( () => {
-      try{
+    setTimeout(() => {
+      try {
         let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
 
-        console.log(temperatures);
+
+      dispatch(setNodesTemperature({nodesTemperature: temperatures}));
       }
       catch (error) {
         setErrorPopup({ title: "Error computing", text: error.message });
@@ -180,13 +167,13 @@ let App = () => {
   const canChangeGridVisibility = Boolean(Mesh);
 
 
-  let gridSettingsButton = !canChangeGridVisibility ? <></> : ( gridVisible ?
-  <div className='p-2'>
-    <button onClick={toggleGrid} className='btn btn-secondary'>Hide grid</button>
-  </div> : 
-  <div className='p-2'>
-    <button onClick={toggleGrid} className='btn btn-primary'>Show grid</button>
-  </div>)
+  let gridSettingsButton = !canChangeGridVisibility ? <></> : (gridVisible ?
+    <div className='p-2'>
+      <button onClick={toggleGrid} className='btn btn-secondary'>Hide grid</button>
+    </div> :
+    <div className='p-2'>
+      <button onClick={toggleGrid} className='btn btn-primary'>Show grid</button>
+    </div>)
 
   let blocksSettings = !canChangeSectionsSettings ?
     <div className='p-2'>
