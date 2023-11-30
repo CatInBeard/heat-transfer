@@ -63,7 +63,7 @@ const convertInpDataToMesh = (inpData, height, width): Mesh => {
 
     let minMax: MinMax = findMinMaxCoordinates(points);
 
-    let scaleX = height/(minMax.max_x - minMax.min_x);
+    let scaleX = height/(minMax.max_x - minMax.min_x + 20);
     let scaleY = width/(minMax.max_y - minMax.min_y);
 
     scale = scaleX > scaleY ? scaleY : scaleX;
@@ -73,8 +73,8 @@ const convertInpDataToMesh = (inpData, height, width): Mesh => {
         points: points,
         lines: lines,
         scale: scale,
-        offset_x: minMax.min_x < 0 ? 5 - minMax.min_x : 0,
-        offset_y: minMax.min_y < 0 ? 5 - minMax.min_y : 0,
+        offset_x: minMax.min_x < 0 ? 5 - minMax.min_x : 5,
+        offset_y: minMax.min_y < 0 ? 5 - minMax.min_y : 5,
     };
 
     return mesh;

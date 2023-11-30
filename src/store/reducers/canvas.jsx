@@ -5,10 +5,14 @@ const canvasSlice = createSlice({
     initialState: {
         mesh: null,
         gridVisible: true,
+        nodesTemperature: null
     },
     reducers: {
         setMesh: (state, action) => {
             state.mesh = action.payload.Mesh
+        },
+        setNodesTemperature: (state, action) => {
+            state.nodesTemperature = action.payload.nodesTemperature
         },
         toggleGridVisibility: (state, action) => {
             state.gridVisible = !state.gridVisible
@@ -16,6 +20,6 @@ const canvasSlice = createSlice({
     }
 });
 
-export const {setMesh, toggleGridVisibility} = canvasSlice.actions;
+export const {setMesh, toggleGridVisibility, setNodesTemperature} = canvasSlice.actions;
 
 export default canvasSlice.reducer
