@@ -9,6 +9,7 @@ const canvasSlice = createSlice({
     },
     reducers: {
         setMesh: (state, action) => {
+            state.nodesTemperature = null
             state.mesh = action.payload.Mesh
         },
         setNodesTemperature: (state, action) => {

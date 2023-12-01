@@ -62,6 +62,9 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, canvas) => {
     let nodes: number[][] = inpData.problemData[0].nodes;
     let elements: number[][] = inpData.problemData[0].elements;
 
+    if(nodesTemperatures.length !== nodes.length){
+        return;
+    }
     
     
     let minT = nodesTemperatures.reduce((min: number, current: number) => current < min ? current : min, nodesTemperatures[0])
