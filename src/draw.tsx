@@ -133,13 +133,27 @@ const localCoordsToCnavasCoords = (coords: Coords, Mesh: Mesh, canvas: HTMLCanva
 
 const temperatureToColor = (T: number, minTemp: number = 10, maxTemp: number = 20): Color => {
 
-    const normalizedTemp = (T - minTemp) / (maxTemp - minTemp);
-      
-    const blue = (1 - normalizedTemp) * 255;
-    const red = normalizedTemp * 255;
-    const green = 0;
+    const normalizedTemp = (T - minTemp) / (maxTemp - minTemp)*100;
+    
+    let r = 1
+    let g = 1
+    let b = 1
 
-    return { r: red, g: green, b: blue, a: 255 }
+   if (normalizedTemp < (25)) {
+      r = 0;
+      g = 0.04 * normalizedTemp;
+   } else if (normalizedTemp < 50) {
+      r = 0;
+      b = 1 + 0.04 * (0.25 - normalizedTemp);
+   } else if (normalizedTemp < 75) {
+      r = 0.04 * (normalizedTemp - 50);
+      b = 0;
+   } else {
+      g = 1 + 0.04 * (75 - normalizedTemp);
+      b = 0;
+   }
+
+    return { r: r*255, g: g*255, b: b*255, a: 255 }
 }
 
 
