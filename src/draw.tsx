@@ -86,8 +86,6 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
             }
         };
 
-        debugger
-        
         return isNeed;
     })
     
@@ -121,7 +119,25 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
 
     });
 
+    drawTemperatureLegend(canvas, minT,maxT);
 
+}
+
+
+const drawTemperatureLegend = (canvas: HTMLCanvasElement, min: number, max: number) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx)
+        return
+
+    for (let i = 0; i <= 100; i++) {
+        const color = temperatureToColor(i, 0, 100);
+        ctx.fillStyle = 'rgb(' + color.r + ', ' + color.g + ', ' + color.b + ')';
+        ctx.fillRect(canvas.width - 100 , canvas.height - i*canvas.height/120, 20 , canvas.height/120);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'black';
+        ctx.fillText(min.toString(), canvas.width - 75, canvas.height - 25);
+        ctx.fillText(max.toString(), canvas.width - 75, canvas.height*0.2 + 25);
+    }
 }
 
 
@@ -158,7 +174,7 @@ const localCoordsToCnavasCoords = (coords: Coords, Mesh: Mesh, canvas: HTMLCanva
     return { x, y }
 }
 
-const temperatureToColor = (T: number, minTemp: number = 10, maxTemp: number = 20): Color => {
+const temperatureToColor = (T: number, minTemp: number = 0, maxTemp: number = 100): Color => {
 
     const normalizedTemp = (T - minTemp) / (maxTemp - minTemp)*100;
     
