@@ -204,7 +204,7 @@ let App = () => {
           <div className='p-2 form-group row'>
             <div className="row">
               <div className="col">
-                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className='form-control'></input>
+                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className={'form-control ' + style.inputMinSize}></input>
               </div>
               <div className='col'>
                 <label>W/mK</label>
@@ -227,7 +227,7 @@ let App = () => {
               <label>{boundary.name}:</label>
             </div>
             <div className="col">
-              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className='form-control'></input>
+              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className={'form-control ' + style.inputMinSize}></input>
             </div>
             <div className="col">
               &deg;K

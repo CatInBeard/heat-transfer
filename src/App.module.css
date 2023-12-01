@@ -1,3 +1,7 @@
 .scrollable{
     overflow-x: auto;
 }
+
+.inputMinSize{
+    min-width: 4em;
+}
