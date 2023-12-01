@@ -143,6 +143,7 @@ let App = () => {
   }
 
   const confirmChooseFromLibrary = async (filePath) => {
+    dispatch(toggleShowLoadFromLibrary());
     dispatch(setcomputingStatus({ status: "loading" }))
 
     const getFile = async (filePath) => {
@@ -170,7 +171,6 @@ let App = () => {
       setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
       dispatch(setcomputingStatus({ status: "waiting" }))
     }
-    dispatch(toggleShowLoadFromLibrary());
   }
 
   const toggleGrid = () => {
