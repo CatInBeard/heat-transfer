@@ -601,10 +601,10 @@
 ** 
 *Material, name=Material-1
 *Conductivity
- 1.5,
+ 100,
 *Material, name=Material-2
 *Conductivity
- 0.5,
+ 1500,
 ** ----------------------------------------------------------------
 ** 
 ** STEP: Step-1
@@ -615,12 +615,12 @@
 ** 
 ** BOUNDARY CONDITIONS
 ** 
-** Name: BC-1 Type: Temperature
+** Name: Water Type: Temperature
 *Boundary
-T_water, 11, 11, 5.
-** Name: BC-2 Type: Temperature
+T_water, 11, 11, 278.
+** Name: Air Type: Temperature
 *Boundary
-T_air, 11, 11, 20.
+T_air, 11, 11, 300.
 ** 
 ** OUTPUT REQUESTS
 ** 
