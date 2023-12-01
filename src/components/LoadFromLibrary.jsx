@@ -8,6 +8,10 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
         "200-elem.inp",
     ]
 
+    const remoteLib = [
+        // {name: "test", path:"https://raw.githubusercontent.com/CatInBeard/heat-transfer/main/fixtures/13-elem.inp"}
+    ]
+
     const selectFile = (event) => {
         const filePath = event.target.getAttribute('data-file-path');
         
@@ -21,6 +25,12 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
         </div>
     })
    
+    filesChoseList.push(...remoteLib.map( (element) => {
+        return <div className="p-1">
+        <a href="#" onClick={selectFile} data-file-path={element.path}>{element.name}</a>
+        </div>
+    }))
+
     return (
         <ClosablePopupContainer cancelAction={cancelAction} headerText={"Select *.inp file from library"} >
             {filesChoseList}
