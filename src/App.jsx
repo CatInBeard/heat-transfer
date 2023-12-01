@@ -58,7 +58,7 @@ let App = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (Mesh && nodesTemperature) {
-        drawTemperatureMap(Mesh, nodesTemperature, inpData, canvasRef.current)
+        drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current)
       }
 
       if (Mesh && gridVisible) {

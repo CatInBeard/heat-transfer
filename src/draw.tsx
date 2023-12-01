@@ -56,8 +56,7 @@ const drawMesh = (Mesh: Mesh, canvas) => {
     })
 }
 
-const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, canvas) => {
-
+const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, canvas) => {
 
     let nodes: number[][] = inpData.problemData[0].nodes;
     let elements: number[][] = inpData.problemData[0].elements;
@@ -66,6 +65,31 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, canvas) => {
         return;
     }
     
+
+    let visibleSections = inpData.problemData[0].sections.filter( (section) => { 
+        return blocksVisibility[section.name]
+    });
+    
+    elements = elements.filter( (element)  =>{
+
+        let isNeed = false;
+
+        for(let i =0; i < visibleSections.length; i++){
+            let section = visibleSections[i]
+            let lset = inpData.problemData[0].lsets.find( (lset) => {
+               return lset.setname == section.elsetName
+            });
+            
+            if(lset.elements.includes(element[0])){
+                isNeed = true;
+                break;
+            }
+        };
+
+        debugger
+        
+        return isNeed;
+    })
     
     let minT = nodesTemperatures.reduce((min: number, current: number) => current < min ? current : min, nodesTemperatures[0])
     let maxT = nodesTemperatures.reduce((max: number, current: number) => current > max ? current : max, nodesTemperatures[0])
