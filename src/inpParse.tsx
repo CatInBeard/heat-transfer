@@ -250,7 +250,13 @@ const parsePartLines = (part: Array<string>): partProblem => {
             if (match && match.length === 2) {
                 var name = match[1];
             } else {
-                throw new InpParsingError("Set name not found");
+                const regexGenBy: RegExp = /nset=(.*?)$/;
+                const match: RegExpMatchArray | null = part[i].match(regexGenBy);
+                if (match && match.length === 2) {
+                    var name = match[1];
+                } else {
+                    throw new InpParsingError("Set name not found");
+                }
             }
             nsets.push({ setname: name, nodes: [] });
             continue;
@@ -263,7 +269,13 @@ const parsePartLines = (part: Array<string>): partProblem => {
             if (match && match.length === 2) {
                 var name = match[1];
             } else {
-                throw new InpParsingError("Set name not found");
+                const regexGenBy: RegExp = /elset=(.*?)$/;
+                const match: RegExpMatchArray | null = part[i].match(regexGenBy);
+                if (match && match.length === 2) {
+                    var name = match[1];
+                } else {
+                    throw new InpParsingError("Set name not found");
+                }
             }
             lsets.push({ setname: name, elements: [] });
             continue;
@@ -409,7 +421,13 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
             if (match && match.length === 2) {
                 var name = match[1];
             } else {
-                throw new InpParsingError("Set name not found");
+                const regexGenBy: RegExp = /nset=(.*?)$/;
+                const match: RegExpMatchArray | null = assemblyStrings[i].match(regexGenBy);
+                if (match && match.length === 2) {
+                    var name = match[1];
+                } else {
+                    throw new InpParsingError("Set name not found");
+                }
             }
             nsets.push({ setname: name, nodes: [] });
             continue;
@@ -422,7 +440,13 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
             if (match && match.length === 2) {
                 var name = match[1];
             } else {
-                throw new InpParsingError("Set name not found");
+                const regexGenBy: RegExp = /elset=(.*?)$/;
+                const match: RegExpMatchArray | null = assemblyStrings[i].match(regexGenBy);
+                if (match && match.length === 2) {
+                    var name = match[1];
+                } else {
+                    throw new InpParsingError("Set name not found");
+                }
             }
             lsets.push({ setname: name, elements: [] });
             continue;
