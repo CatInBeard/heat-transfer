@@ -3,7 +3,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import { useSelector, useDispatch } from 'react-redux'
 import { useState, useRef, useEffect } from "react";
 import {
-  toggleHint, toggleUpload, toggleBlockVisibility,
+  toggleHint, toggleUpload, toggleBlockVisibility, toggleShowLoadFromLibrary,
   setBlockTermalConductivity,
   setBCTemperature, saveInpData,
   setcomputingStatus
@@ -19,6 +19,7 @@ import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
 import { computeSteadyState } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap } from './draw.tsx';
+import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -33,6 +34,7 @@ let App = () => {
   const Mesh = useSelector((state) => state.canvas.mesh)
   const gridVisible = useSelector((state) => state.canvas.gridVisible)
   const nodesTemperature = useSelector((state) => state.canvas.nodesTemperature)
+  const show_load_from_library = useSelector((state) => state.values.show_load_from_library)
 
   const [errorPopup, setErrorPopup] = useState(null);
 
@@ -66,7 +68,7 @@ let App = () => {
         drawMesh(Mesh, canvasRef.current);
 
       }
-      
+
     }
 
 
@@ -115,6 +117,10 @@ let App = () => {
     dispatch(toggleUpload())
   }
 
+  const LoadFromLibraryClick = () => {
+    dispatch(toggleShowLoadFromLibrary())
+  }
+
   const confirmUpload = (file) => {
     dispatch(setcomputingStatus({ status: "loading" }))
     const reader = new FileReader();
@@ -136,6 +142,37 @@ let App = () => {
     reader.readAsText(file);
   }
 
+  const confirmChooseFromLibrary = async (filePath) => {
+    dispatch(setcomputingStatus({ status: "loading" }))
+
+    const getFile = async (filePath) => {
+
+      let retData;
+
+      await fetch(filePath)
+        .then(response => response.text())
+        .then(data => {
+          retData = data
+        });
+
+      return retData
+    }
+
+    let text = await getFile(filePath);
+    try {
+      let inpData = parseInpText(text);
+      checkInpDataForHeatTransfer(inpData);
+      console.log(inpData);
+      dispatch(saveInpData({ data: inpData }));
+      dispatch(setcomputingStatus({ status: "ready" }))
+    }
+    catch (error) {
+      setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
+      dispatch(setcomputingStatus({ status: "waiting" }))
+    }
+    dispatch(toggleShowLoadFromLibrary());
+  }
+
   const toggleGrid = () => {
     dispatch(toggleGridVisibility())
   }
@@ -153,7 +190,7 @@ let App = () => {
         let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
 
 
-      dispatch(setNodesTemperature({nodesTemperature: temperatures}));
+        dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
       }
       catch (error) {
         setErrorPopup({ title: "Error computing", text: error.message });
@@ -241,7 +278,8 @@ let App = () => {
 
 
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
-  const upload_component = upload_status ? <UploadComponent confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
+  const upload_component = upload_status ? <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
+  const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
 
   const status = 'Press start'
@@ -250,6 +288,7 @@ let App = () => {
       <h1>{heat_transfer_status_text} heat transfer</h1>
       {hint_component}
       {upload_component}
+      {load_from_library_component}
       {error_component}
       <div className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>

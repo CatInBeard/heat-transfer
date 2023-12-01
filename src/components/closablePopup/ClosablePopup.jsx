@@ -2,7 +2,7 @@ import PopupContainer from "../popup/PopupContainer";
 import s from "./ClosablePopup.module.css"
 import { useState, useEffect, useRef } from "react";
 
-let ClosablePopupContainer = ({ children, cancelAction, headerText = "Warning", type, focusOnClose}) => {
+let ClosablePopupContainer = ({ children, cancelAction, headerText = "Warning", type="primary", focusOnClose = true}) => {
 
     const focusRef = useRef(null);
 

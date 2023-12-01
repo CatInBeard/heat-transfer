@@ -11,7 +11,8 @@ const valuesSlice = createSlice({
     blocks_termal_conductivity: {},
     temperature_BC: [],
     computingStatus: "waiting",
-    inpData: null
+    inpData: null,
+    show_load_from_library: false,
   },
   reducers: {
     setHeatTranserStatus: (state, action) => {
@@ -37,6 +38,11 @@ const valuesSlice = createSlice({
     },
     toggleUpload: (state, action) => {
       state.show_upload = !state.show_upload 
+    },
+    toggleShowLoadFromLibrary: (state, action) => {
+      state.show_load_from_library = !state.show_load_from_library 
+
+      console.log(state.show_load_from_library);
     },
     toggleBlockVisibility: (state, action) => {
       let blocks_visibility = state.blocks_visibility;
@@ -94,7 +100,7 @@ const valuesSlice = createSlice({
   },
 })
 
-export const { toggleHint,setHeatTranserStatus, toggleUpload,
+export const { toggleHint,setHeatTranserStatus, toggleUpload, toggleShowLoadFromLibrary,
   toggleBlockVisibility, setBlockTermalConductivity,
   setBCTemperature,
   saveInpData, setcomputingStatus } = valuesSlice.actions
