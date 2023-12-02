@@ -129,7 +129,6 @@ let App = () => {
         var text = e.target.result;
         let inpData = parseInpText(text);
         checkInpDataForHeatTransfer(inpData);
-        console.log(inpData);
         dispatch(saveInpData({ data: inpData }));
         dispatch(setcomputingStatus({ status: "ready" }))
       }
@@ -160,17 +159,18 @@ let App = () => {
     }
 
     let text = await getFile(filePath);
-    try {
-      let inpData = parseInpText(text);
-      checkInpDataForHeatTransfer(inpData);
-      console.log(inpData);
-      dispatch(saveInpData({ data: inpData }));
-      dispatch(setcomputingStatus({ status: "ready" }))
-    }
-    catch (error) {
-      setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
-      dispatch(setcomputingStatus({ status: "waiting" }))
-    }
+    setTimeout(() => {
+      try {
+        let inpData = parseInpText(text);
+        checkInpDataForHeatTransfer(inpData);
+        dispatch(saveInpData({ data: inpData }));
+        dispatch(setcomputingStatus({ status: "ready" }))
+      }
+      catch (error) {
+        setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
+        dispatch(setcomputingStatus({ status: "waiting" }))
+      }
+    },100);
   }
 
   const toggleGrid = () => {

@@ -42,7 +42,6 @@ const valuesSlice = createSlice({
     toggleShowLoadFromLibrary: (state, action) => {
       state.show_load_from_library = !state.show_load_from_library 
 
-      console.log(state.show_load_from_library);
     },
     toggleBlockVisibility: (state, action) => {
       let blocks_visibility = state.blocks_visibility;
