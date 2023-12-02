@@ -69,24 +69,20 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
     let visibleSections = inpData.problemData[0].sections.filter( (section) => { 
         return blocksVisibility[section.name]
     });
+
+    let visibleElementsNumbers: number[] = [];
+    
+    for(let i =0; i < visibleSections.length; i++){
+        let section = visibleSections[i]
+        let lset = inpData.problemData[0].lsets.find( (lset) => {
+           return lset.setname == section.elsetName
+        });
+
+        visibleElementsNumbers.push(...lset.elements);
+    };
     
     elements = elements.filter( (element)  =>{
-
-        let isNeed = false;
-
-        for(let i =0; i < visibleSections.length; i++){
-            let section = visibleSections[i]
-            let lset = inpData.problemData[0].lsets.find( (lset) => {
-               return lset.setname == section.elsetName
-            });
-            
-            if(lset.elements.includes(element[0])){
-                isNeed = true;
-                break;
-            }
-        };
-
-        return isNeed;
+        return visibleElementsNumbers.includes(element[0]);
     })
     
     let minT = nodesTemperatures.reduce((min: number, current: number) => current < min ? current : min, nodesTemperatures[0])
