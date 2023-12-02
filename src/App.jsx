@@ -40,6 +40,7 @@ let App = () => {
 
 
   const canvasRef = useRef(null);
+  const canvasDiv = useRef(null);
 
   useEffect(() => {
 
@@ -60,7 +61,8 @@ let App = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (Mesh && nodesTemperature) {
-        drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current)
+        const div = canvasDiv.current;
+        drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current, div)
       }
 
       if (Mesh && gridVisible) {
@@ -290,7 +292,7 @@ let App = () => {
       {upload_component}
       {load_from_library_component}
       {error_component}
-      <div className={style.scrollable}>
+      <div ref={canvasDiv} className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
       </div>
       <div className='d-flex align-items-baseline'>
