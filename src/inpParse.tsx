@@ -645,9 +645,9 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
     return steps;
 }
 
-const checkInpDataForHeatTransfer = (inpDataLines) => {
+const checkInpDataForHeatTransfer = (inpData) => {
 
-    let steps: Array<Step> = inpDataLines.steps;
+    let steps: Array<Step> = inpData.steps;
 
     for (let i = 0; i < steps.length; i++) {
         let step: Step = steps[i];
@@ -655,6 +655,10 @@ const checkInpDataForHeatTransfer = (inpDataLines) => {
         if(step.jobType != "Heat Transfer"){
             throw new InpParsingError("The problem is not thermal");
         }
+    }
+
+    if(inpData.problemData[0].nodes.length === 0){
+        throw new InpParsingError("Nodes not found in part");
     }
 }
 
