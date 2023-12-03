@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
 
     const fixturesInpFileNames = [
-        "13-elem.inp",
         "200-elem.inp",
     ]
 
