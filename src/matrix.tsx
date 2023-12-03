@@ -179,6 +179,27 @@ const solveLinearEquationSystem = (A: number[][], b: number[]): number[] => {
     return x;
 }
 
+const Determinant = (matrix: number[][]): number => {
+    if (matrix.length !== matrix[0].length) {
+        throw new Error('Matrix must be square');
+    }
+
+    const n = matrix.length;
+    let det = 1;
+
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const factor = matrix[j][i] / matrix[i][i];
+            for (let k = i; k < n; k++) {
+                matrix[j][k] -= factor * matrix[i][k];
+            }
+        }
+        det *= matrix[i][i];
+    }
+
+    return det;
+}
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem }
+
+export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant }

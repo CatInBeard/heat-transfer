@@ -1,4 +1,4 @@
-import { transposeMatrix, MultiplyMatrix, solveLinearEquationSystem, multiplyMatrixByNumber } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
 
 type TemperaturedNode = {
@@ -16,7 +16,7 @@ const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity)
 
     let F = getTermalForcesFromBC(inpData, temperature_BC);
 
-    let temperatures = solveLinearEquationSystem(K,F);
+    let temperatures = solveLinearEquationSystem(K, F);
 
     return temperatures
 
@@ -38,7 +38,7 @@ const getTermalForcesFromBC = (inpData, temperature_BC): number[] => {
 
         for (let i = 0; i < nodes.length; i++) {
             let node: number = nodes[i];
-            F[node- 1] = BC.temperature;
+            F[node - 1] = BC.temperature;
         }
 
     }
@@ -73,7 +73,6 @@ const applyTemperatureBC = (K: Array<Array<number>>, inpData): Array<Array<numbe
         nset.nodes.forEach((node) => {
             for (let i = 0; i < K.length; i++) {
                 K[node - 1][i] = 0
-                // K[i][node - 1] = 0
                 K[node - 1][node - 1] = 1
             }
         })
@@ -108,63 +107,44 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
     let nodes = inpData.problemData[0].nodes;
     let elements = inpData.problemData[0].elements;
 
-    let globalCondictivityMatrix = Array(nodes.length)
-    for (let i = 0; i < nodes.length; i++) {
-        globalCondictivityMatrix[i] = Array(nodes.length)
-        for (let j = 0; j < nodes.length; j++) {
-            globalCondictivityMatrix[i][j] = 0;
-        }
+    let K: number[][] = new Array(nodes.length);
+    for (let i = 0; i < K.length; i++) {
+        K[i] = new Array(nodes.length).fill(0);
     }
-    
+
     for (let i = 0; i < elements.length; i++) {
 
-        let element: Array<number> = elements[i];
+        let conductivity = getConductivityByElement(elements[i][0], blocks_termal_conductivity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
+        let R: number[][] = [[], [], []];
+        for (let j = 1; j <= 3; j++) {
+            R[j - 1] = [nodes[elements[i][j] - 1][1], nodes[elements[i][j] - 1][2]];
+        }
 
-        let Xi: number = nodes[element[1] - 1][1];
-        let Yi: number = nodes[element[1] - 1][2];
-        let Xj: number = nodes[element[2] - 1][1];
-        let Yj: number = nodes[element[2] - 1][2];
-        let Xk: number = nodes[element[3] - 1][1];
-        let Yk: number = nodes[element[3] - 1][2];
+        R = transposeMatrix(R);
 
-        let area: number = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
-        
-        let Bi: number = Yj - Yk
-        let Bj: number = Yk - Yi
-        let Bk: number = Yi - Yj
-        let Ci: number = Xk - Xj
-        let Cj: number = Xi - Xk
-        let Ck: number = Xj - Xi
-
-        let gradientMatrix: Array<Array<number>> = [[Bi, Bj, Bk], [Ci, Cj, Ck]]
-
-        
-
-        let conductivity = getConductivityByElement(element[0], blocks_termal_conductivity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
-
-        
-
-        let materialPropertiesMatrix = [[conductivity, 0], [0, conductivity]]
-
-        
-
-        let localCondictivityMatrix: Array<Array<number>> = multiplyMatrixByNumber(
-            MultiplyMatrix(
-                MultiplyMatrix(
-                    transposeMatrix(gradientMatrix),
-                    materialPropertiesMatrix
-                ),
-                gradientMatrix
-            ),
-             0.25 * area
-        )
-        
-
-        globalCondictivityMatrix = accumulateToGlobalMatrix(globalCondictivityMatrix, localCondictivityMatrix, element[1], element[2], element[3])
-
+        let Ki = getLocalCondictivityMatrix(R, conductivity);
+        K = accumulateToGlobalMatrix(K, Ki, elements[i][1], elements[i][2], elements[i][3]);
 
     }
-    return globalCondictivityMatrix;
+
+
+    return K;
+}
+
+const getLocalCondictivityMatrix = (coords: number[][], Lambda: number) => {
+
+    let J = [
+        [coords[0][2] - coords[0][0], coords[1][2] - coords[1][0]],
+        [coords[0][1] - coords[0][0], coords[1][1] - coords[1][0]]
+    ];
+
+    let Bnat = [
+        [-1, 0, 1],
+        [-1, 1, 0]
+    ];
+
+    let B = MultiplyMatrix(InverseMatrix(J), Bnat);
+    return MultiplyMatrix(multiplyMatrixByNumber(transposeMatrix(B), Lambda), multiplyMatrixByNumber(B, Determinant(J) / 2));
 }
 
 const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatrix: Array<Array<number>>, i: number, j: number, k: number): Array<Array<number>> => {
