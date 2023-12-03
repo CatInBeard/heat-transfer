@@ -34,7 +34,8 @@ let UploadComponent = ({ cancelAction, fileType, confirmAction, inpLibraryAction
         }
     }
 
-    let inpLibraryClick = () => {
+    let inpLibraryClick = (event) => {
+        event.preventDefault();
         cancelAction();
         inpLibraryAction();
     }

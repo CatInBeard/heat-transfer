@@ -14,7 +14,7 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
 
     const selectFile = (event) => {
         const filePath = event.target.getAttribute('data-file-path');
-        
+        event.preventDefault();
         confirmAction(filePath)
 
     }
