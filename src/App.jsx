@@ -189,7 +189,12 @@ let App = () => {
 
     setTimeout(() => {
       try {
+        const start = performance.now();
+        
         let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+
+        const end = performance.now();  
+        console.log("Solved in " + (end - start).toString() +" milliseconds.");
 
 
         dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
