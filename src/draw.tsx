@@ -110,6 +110,11 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
             return { x: coords.x, y: coords.y, temperature: temperature }
         })
 
+
+        temperaturePoints = temperaturePoints.sort((point1, point2) => {
+            return point1.temperature - point2.temperature;
+        })
+        
         drawGradientTriangle(temperaturePoints, canvas, minT, maxT);
 
 
