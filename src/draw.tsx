@@ -1,4 +1,4 @@
-import { Mesh } from "./mesh.tsx"
+import { Mesh, findMinMaxCoordinates, MinMax } from "./mesh.tsx"
 
 type Coords = {
     x: number,
@@ -172,21 +172,58 @@ const drawGradientTriangle = (points: TemperaturePoint[], canvas: HTMLCanvasElem
     let color1: Color = temperatureToColor(points[0].temperature, minT, maxT);
     let color2: Color = temperatureToColor(points[1].temperature, minT, maxT);
     let color3: Color = temperatureToColor(points[2].temperature, minT, maxT);
-    const gradient = ctx.createLinearGradient(points[0].x, points[0].y, points[2].x, points[2].y);
-
-    gradient.addColorStop(0, 'rgb(' + color1.r + ', ' + color1.g + ', ' + color1.b + ')');
-    gradient.addColorStop(0.5, 'rgb(' + color2.r + ', ' + color2.g + ', ' + color2.b + ')');
-    gradient.addColorStop(1, 'rgb(' + color3.r + ', ' + color3.g + ', ' + color3.b + ')');
-
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    ctx.lineTo(points[1].x, points[1].y);
-    ctx.lineTo(points[2].x, points[2].y);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
+    smoothTriangleColoring(points,color1, color2, color3, ctx)
 
 }
+
+function smoothTriangleColoring(points :Coords[], color1: Color, color2: Color, color3: Color, ctx) {
+  
+
+    if (!ctx)
+        return
+
+
+    let minMax: MinMax = findMinMaxCoordinates(points);    
+
+    const imageData = ctx.getImageData(0, 0, 1200, 600);
+    const data = imageData.data;
+  
+    for (let y = 0; y < 600; y++) {
+      for (let x = 0; x < 1200; x++) {
+        const barycentric = calculateBarycentricCoordinates(points[0], points[1], points[2], x, y);
+        
+        if (barycentric.x >= 0 && barycentric.y >= 0 && barycentric.z >= 0) {
+          const color = interpolateColors(color1, color2, color3, barycentric);
+          const index = (x + y * 1200) * 4;
+          data[index] = color.r;
+          data[index + 1] = color.g;
+          data[index + 2] = color.b;
+          data[index + 3] = 255;
+        }
+      }
+    }
+  
+    ctx.putImageData(imageData, 0, 0);
+  }
+  
+  function calculateBarycentricCoordinates(point1, point2, point3, x, y) {
+    const denominator = ((point2.y - point3.y) * (point1.x - point3.x) + (point3.x - point2.x) * (point1.y - point3.y));
+    const a = ((point2.y - point3.y) * (x - point3.x) + (point3.x - point2.x) * (y - point3.y)) / denominator;
+    const b = ((point3.y - point1.y) * (x - point3.x) + (point1.x - point3.x) * (y - point3.y)) / denominator;
+    const c = 1 - a - b;
+    return { x: a, y: b, z: c };
+  }
+  
+  function interpolateColors(color1, color2, color3, barycentric) {
+    const r = Math.floor(color1.r * barycentric.x + color2.r * barycentric.y + color3.r * barycentric.z);
+    const g = Math.floor(color1.g * barycentric.x + color2.g * barycentric.y + color3.g * barycentric.z);
+    const b = Math.floor(color1.b * barycentric.x + color2.b * barycentric.y + color3.b * barycentric.z);
+    return { r, g, b };
+  }
+
+
+
+
 
 const localCoordsToCnavasCoords = (coords: Coords, Mesh: Mesh, canvas: HTMLCanvasElement): Coords => {
 
