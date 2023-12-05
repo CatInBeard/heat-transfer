@@ -185,16 +185,23 @@ function smoothTriangleColoring(points :Coords[], color1: Color, color2: Color, 
 
     let minMax: MinMax = findMinMaxCoordinates(points);    
 
-    const imageData = ctx.getImageData(0, 0, 1200, 600);
+    const imageData = ctx.getImageData(Math.floor(minMax.min_x)-1, Math.floor(minMax.min_y)-1, Math.floor(minMax.max_x) - Math.floor(minMax.min_x)+2, Math.floor(minMax.max_y)  - Math.floor(minMax.min_y)+2);
     const data = imageData.data;
   
-    for (let y = 0; y < 600; y++) {
-      for (let x = 0; x < 1200; x++) {
+
+    points.map((point) => { 
+        point.y -=  Math.floor(minMax.min_y)-1
+        point.x -=  Math.floor(minMax.min_x)-1
+        return point
+    })
+
+    for (let y = 0; y < Math.floor(minMax.max_y)+1; y++) {
+      for (let x = 0; x < Math.floor(minMax.max_x)+1; x++) {
         const barycentric = calculateBarycentricCoordinates(points[0], points[1], points[2], x, y);
         
         if (barycentric.x >= 0 && barycentric.y >= 0 && barycentric.z >= 0) {
           const color = interpolateColors(color1, color2, color3, barycentric);
-          const index = (x + y * 1200) * 4;
+          const index = (x + y * (Math.floor(minMax.max_x) - Math.floor(minMax.min_x)+2)) * 4;
           data[index] = color.r;
           data[index + 1] = color.g;
           data[index + 2] = color.b;
@@ -203,7 +210,7 @@ function smoothTriangleColoring(points :Coords[], color1: Color, color2: Color, 
       }
     }
   
-    ctx.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, Math.floor(minMax.min_x)-1, Math.floor(minMax.min_y)-1);
   }
   
   function calculateBarycentricCoordinates(point1, point2, point3, x, y) {
