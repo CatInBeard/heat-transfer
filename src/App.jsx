@@ -135,6 +135,7 @@ let App = () => {
         dispatch(setcomputingStatus({ status: "ready" }))
       }
       catch (error) {
+        console.error(error);
         setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
         dispatch(setcomputingStatus({ status: "waiting" }))
       }
@@ -169,10 +170,11 @@ let App = () => {
         dispatch(setcomputingStatus({ status: "ready" }))
       }
       catch (error) {
+        console.error(error);
         setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
         dispatch(setcomputingStatus({ status: "waiting" }))
       }
-    },100);
+    }, 100);
   }
 
   const toggleGrid = () => {
@@ -190,16 +192,17 @@ let App = () => {
     setTimeout(() => {
       try {
         const start = performance.now();
-        
+
         let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
 
-        const end = performance.now();  
-        console.log("Solved in " + (end - start).toString() +" milliseconds.");
+        const end = performance.now();
+        console.log("Solved in " + (end - start).toString() + " milliseconds.");
 
 
         dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
       }
       catch (error) {
+        console.error(error);
         setErrorPopup({ title: "Error computing", text: error.message });
       }
       dispatch(setcomputingStatus({ status: "computed" }))
