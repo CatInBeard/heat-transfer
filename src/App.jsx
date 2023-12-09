@@ -216,10 +216,10 @@ let App = () => {
 
   let gridSettingsButton = !canChangeGridVisibility ? <></> : (gridVisible ?
     <div className='p-2'>
-      <button onClick={toggleGrid} className='btn btn-secondary'>Hide grid</button>
+      <button onClick={toggleGrid} className='btn btn-secondary'>Hide mesh</button>
     </div> :
     <div className='p-2'>
-      <button onClick={toggleGrid} className='btn btn-primary'>Show grid</button>
+      <button onClick={toggleGrid} className='btn btn-primary'>Show mesh</button>
     </div>)
 
   let blocksSettings = !canChangeSectionsSettings ?
