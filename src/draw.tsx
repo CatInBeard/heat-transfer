@@ -58,6 +58,15 @@ const drawMesh = (Mesh: Mesh, canvas) => {
 
 const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, canvas, divElement) => {
 
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx)
+        return
+
+    const ctxImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = ctxImageData.data;
+
+
     let nodes: number[][] = inpData.problemData[0].nodes;
     let elements: number[][] = inpData.problemData[0].elements;
 
@@ -114,12 +123,13 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
         temperaturePoints = temperaturePoints.sort((point1, point2) => {
             return point1.temperature - point2.temperature;
         })
-        
-        drawGradientTriangle(temperaturePoints, canvas, minT, maxT);
+
+        drawGradientTriangle(temperaturePoints, imageData, minT, maxT, canvas.width);
 
 
     });
 
+    ctx.putImageData(ctxImageData, 0, 0);
 
 
     let maxLeft: number = 0;
@@ -162,72 +172,46 @@ const drawTemperatureLegend = (canvas: HTMLCanvasElement, min: number, max: numb
 }
 
 
-const drawGradientTriangle = (points: TemperaturePoint[], canvas: HTMLCanvasElement, minT: number, maxT: number) => {
+const drawGradientTriangle = (points: TemperaturePoint[], imageData: Uint8ClampedArray, minT: number, maxT: number, canvas_width: number) => {
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx)
-        return
+    let minMax: MinMax = findMinMaxCoordinates(points);
 
+    for (let y = 0; y < Math.floor(minMax.max_y) + 1; y++) {
+        for (let x = 0; x < Math.floor(minMax.max_x) + 1; x++) {
+            const barycentric = calculateBarycentricCoordinates(points[0], points[1], points[2], x, y);
 
-    let color1: Color = temperatureToColor(points[0].temperature, minT, maxT);
-    let color2: Color = temperatureToColor(points[1].temperature, minT, maxT);
-    let color3: Color = temperatureToColor(points[2].temperature, minT, maxT);
-    smoothTriangleColoring(points,color1, color2, color3, ctx)
+            if (barycentric.x >= 0 && barycentric.y >= 0 && barycentric.z >= 0) {
+                const temperature = interpolateTemperature(points[0].temperature, points[1].temperature, points[2].temperature, barycentric);
+                const color: Color = temperatureToColor(temperature, minT, maxT);
+                const index = (x + y * canvas_width) * 4;
+                imageData[index] = color.r;
+                imageData[index + 1] = color.g;
+                imageData[index + 2] = color.b;
+                imageData[index + 3] = 255;
+            }
+        }
+    }
 
 }
 
-function smoothTriangleColoring(points :Coords[], color1: Color, color2: Color, color3: Color, ctx) {
-  
-
-    if (!ctx)
-        return
-
-
-    let minMax: MinMax = findMinMaxCoordinates(points);    
-
-    const imageData = ctx.getImageData(Math.floor(minMax.min_x)-1, Math.floor(minMax.min_y)-1, Math.floor(minMax.max_x) - Math.floor(minMax.min_x)+2, Math.floor(minMax.max_y)  - Math.floor(minMax.min_y)+2);
-    const data = imageData.data;
-  
-
-    points.map((point) => { 
-        point.y -=  Math.floor(minMax.min_y)-1
-        point.x -=  Math.floor(minMax.min_x)-1
-        return point
-    })
-
-    for (let y = 0; y < Math.floor(minMax.max_y)+1; y++) {
-      for (let x = 0; x < Math.floor(minMax.max_x)+1; x++) {
-        const barycentric = calculateBarycentricCoordinates(points[0], points[1], points[2], x, y);
-        
-        if (barycentric.x >= 0 && barycentric.y >= 0 && barycentric.z >= 0) {
-          const color = interpolateColors(color1, color2, color3, barycentric);
-          const index = (x + y * (Math.floor(minMax.max_x) - Math.floor(minMax.min_x)+2)) * 4;
-          data[index] = color.r;
-          data[index + 1] = color.g;
-          data[index + 2] = color.b;
-          data[index + 3] = 255;
-        }
-      }
-    }
-  
-    ctx.putImageData(imageData, Math.floor(minMax.min_x)-1, Math.floor(minMax.min_y)-1);
-  }
-  
-  function calculateBarycentricCoordinates(point1, point2, point3, x, y) {
+const calculateBarycentricCoordinates = (point1: Coords, point2: Coords, point3: Coords, x: number, y: number) => {
     const denominator = ((point2.y - point3.y) * (point1.x - point3.x) + (point3.x - point2.x) * (point1.y - point3.y));
     const a = ((point2.y - point3.y) * (x - point3.x) + (point3.x - point2.x) * (y - point3.y)) / denominator;
     const b = ((point3.y - point1.y) * (x - point3.x) + (point1.x - point3.x) * (y - point3.y)) / denominator;
     const c = 1 - a - b;
     return { x: a, y: b, z: c };
-  }
-  
-  function interpolateColors(color1, color2, color3, barycentric) {
+}
+
+const interpolateColors = (color1: Color, color2: Color, color3: Color, barycentric) => {
     const r = Math.floor(color1.r * barycentric.x + color2.r * barycentric.y + color3.r * barycentric.z);
     const g = Math.floor(color1.g * barycentric.x + color2.g * barycentric.y + color3.g * barycentric.z);
     const b = Math.floor(color1.b * barycentric.x + color2.b * barycentric.y + color3.b * barycentric.z);
     return { r, g, b };
-  }
+}
 
+const interpolateTemperature = (temperature1: number, temperature2: number, temperature3: number, barycentric) => {
+    return Math.floor(temperature1 * barycentric.x + temperature2 * barycentric.y + temperature3 * barycentric.z);
+}
 
 
 
