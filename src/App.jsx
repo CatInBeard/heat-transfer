@@ -277,7 +277,7 @@ let App = () => {
               <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className={'form-control ' + style.inputMinSize}></input>
             </div>
             <div className="col">
-              &deg;K
+              &deg;C
             </div>
           </div>
         </div>
