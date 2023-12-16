@@ -4,9 +4,9 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useState, useRef, useEffect } from "react";
 import {
   toggleHint, toggleUpload, toggleBlockVisibility, toggleShowLoadFromLibrary,
-  setBlockTermalConductivity,
+  setBlockTermalConductivity, setBlockSpecificHeat, setBlockDensity,
   setBCTemperature, saveInpData,
-  setcomputingStatus
+  setcomputingStatus, setHeatStateType
 } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
 import UploadComponent from './components/UploadComponent.jsx';
@@ -23,13 +23,15 @@ import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
-  const heat_transfer_status_text = useSelector((state) => state.values.heat_transfer_status_text)
+  const state_type = useSelector((state) => state.values.state_type)
   const hint_status = useSelector((state) => state.values.show_hint)
   const upload_status = useSelector((state) => state.values.show_upload)
   const inpData = useSelector((state) => state.values.inpData)
   const computingStatus = useSelector((state) => state.values.computingStatus)
   const blocksVisibility = useSelector((state) => state.values.blocks_visibility)
   const blocks_termal_conductivity = useSelector((state) => state.values.blocks_termal_conductivity)
+  const blocks_specific_heat = useSelector((state) => state.values.blocks_specific_heat)
+  const blocks_density = useSelector((state) => state.values.blocks_density)
   const temperature_BC = useSelector((state) => state.values.temperature_BC)
   const Mesh = useSelector((state) => state.canvas.mesh)
   const gridVisible = useSelector((state) => state.canvas.gridVisible)
@@ -98,6 +100,16 @@ let App = () => {
     dispatch(setBlockTermalConductivity({ event: event.target.value, sectionName: sectionName }))
   };
 
+  const onBlockDensityChange = (event) => {
+    const sectionName = event.target.getAttribute('data-section-name');
+    dispatch(setBlockDensity({ event: event.target.value, sectionName: sectionName }))
+  };
+
+  const onBlockSpecificHeatChange = (event) => {
+    const sectionName = event.target.getAttribute('data-section-name');
+    dispatch(setBlockSpecificHeat({ event: event.target.value, sectionName: sectionName }))
+  };
+
 
   const onBCTemperatureChange = (event) => {
     const bcName = event.target.getAttribute('data-bc-name');
@@ -142,6 +154,13 @@ let App = () => {
       dispatch(toggleUpload());
     };
     reader.readAsText(file);
+  }
+
+
+  const changeProblemState = (event) => {
+
+
+    dispatch(setHeatStateType({ type: event.target.checked === true ? "transitive" : "steady" }))
   }
 
   const confirmChooseFromLibrary = async (filePath) => {
@@ -213,6 +232,20 @@ let App = () => {
   const canChangeBC = computingStatus != "waiting" && inpData !== null;
   const canChangeGridVisibility = Boolean(Mesh);
 
+  const stateSwitcher =
+    <div className="row">
+      <div className="col">
+        Steady-state
+      </div>
+      <div className="col">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
+        </div>
+      </div>
+      <div className="col">
+        Transitive
+      </div>
+    </div>
 
   let gridSettingsButton = !canChangeGridVisibility ? <></> : (gridVisible ?
     <div className='p-2'>
@@ -232,10 +265,45 @@ let App = () => {
     </div> : <>
       {inpData.problemData[0].sections.map((section) => {
 
+
+
         let block_visibility = !blocksVisibility[section.name]
         let block_termal_conductivity = blocks_termal_conductivity[section.name];
+        let block_specific_heat = blocks_specific_heat[section.name];
+        let block_density = blocks_density[section.name];
         let Button = block_visibility ? <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-success'><nobr data-section-name={section.name}>Show</nobr></button> :
           <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
+
+
+        let transitivePart = state_type == "transitive" ? <>
+          <div className='p-2 form-group row'>
+            <div className="row">
+              <div className='col'>
+                &rho;
+              </div>
+              <div className="col">
+                <input data-section-name={section.name} min={0} value={block_density} onChange={onBlockDensityChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+              </div>
+              <div className='col'>
+                <label>kg/m<sup>3</sup></label>
+              </div>
+            </div>
+          </div>
+          <div className='p-2 form-group row'>
+            <div className="row">
+              <div className='col'>
+                <label>C</label>
+              </div>
+              <div className="col">
+                <input data-section-name={section.name} min={0} value={block_specific_heat} onChange={onBlockSpecificHeatChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+              </div>
+              <div className='col'>
+                <label>J/°С</label>
+              </div>
+            </div>
+          </div>
+        </> :
+          <></>
 
         return <>
           <div className='p-2' key={section.name}>
@@ -250,6 +318,9 @@ let App = () => {
           </div>
           <div className='p-2 form-group row'>
             <div className="row">
+              <div className='col'>
+                <label>P</label>
+              </div>
               <div className="col">
                 <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className={'form-control ' + style.inputMinSize}></input>
               </div>
@@ -258,6 +329,7 @@ let App = () => {
               </div>
             </div>
           </div>
+          {transitivePart}
         </>
       }
       )}</>
@@ -295,7 +367,7 @@ let App = () => {
   const status = 'Press start'
   return (
     <div className="container-lg mt-3">
-      <h1>{heat_transfer_status_text} heat transfer</h1>
+      <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>
       {hint_component}
       {upload_component}
       {load_from_library_component}
@@ -336,6 +408,9 @@ let App = () => {
           </div>
           <div className='p-2'>Status: <b>{getStatusText(computingStatus)}</b></div>
           {statusData}
+          <div className='p-2'>
+            {stateSwitcher}
+          </div>
           <div className='p-2'>
             <button disabled={!canStartComputing} onClick={startComputing} className='btn btn-lg btn-primary'>Start</button>
           </div>
