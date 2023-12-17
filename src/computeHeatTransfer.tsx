@@ -1,10 +1,65 @@
-import { transposeMatrix, MultiplyMatrix, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, SumMatrix } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
 
 type TemperaturedNode = {
     x: number,
     y: number,
     temperature: number
+}
+
+
+const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity) => {
+
+    let timeStep = 0.01;
+    let steps = 1000;
+
+    let Theta = 1;
+
+    let K = getConductivityMatrix(inpData, blocks_termal_conductivity);
+
+    let C = getCapacityMayrix(inpData, blocks_density, blocks_capacity);
+
+    K = applyTemperatureBC(K, inpData);
+    C = applyTemperatureBC(C, inpData);
+
+    let F = getTermalForcesFromBC(inpData, temperature_BC);
+
+    let K_new = SumMatrix(C, multiplyMatrixByNumber(K,timeStep * Theta));
+
+    
+
+    let temperaturePrevStep: number[] = [];
+    let temperatureCurrentStep: number[] = [];
+
+    for (let i = 0; i < F.length; i++) {
+        temperaturePrevStep.push(0);
+    }
+
+    let temperatureFrames: number[][] = [];
+
+    temperatureFrames.push(temperaturePrevStep);
+
+    for (let t = 0; t < timeStep * steps; t += timeStep) {
+
+        let F_new =  SumVector(MultiplyMatrixByVector( SumMatrix(C, multiplyMatrixByNumber(K, -1*timeStep*(1 - Theta))), temperaturePrevStep), multiplyVectorByNumber(F,timeStep))
+
+        temperatureCurrentStep = solveLinearEquationSystem(K_new, F_new);
+
+        // temperatureCurrentStep = solveLinearEquationSystem(
+        //     multiplyMatrixByNumber(C, 1 / timeStep),
+        //     SumVector(
+        //         SumVector(F, multiplyVectorByNumber(MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
+        //         multiplyVectorByNumber(temperaturePrevStep, 1 / timeStep)
+        //     )
+        // )
+
+        temperatureFrames.push(temperatureCurrentStep);
+        temperaturePrevStep = temperatureCurrentStep;
+    }
+
+
+    return temperatureFrames;
+
 }
 
 
@@ -102,6 +157,48 @@ const getConductivityByElement = (element: number, blocks_termal_conductivity, l
     return blocks_termal_conductivity[sectionName] ?? 0;
 }
 
+const getDensityByElement = (element: number, blocks_density, lsets: Lset[], sections: Section[]): number => {
+
+    let lset = lsets.find((elset) => {
+        return elset.elements.indexOf(element) != -1;
+    })
+    if (!lset) {
+        throw new Error("Element not in elset");
+    }
+    let lsetName: string = lset.setname;
+    let section = sections.find((section) => {
+        return section.elsetName == lsetName
+    })
+    if (!section) {
+        throw new Error("Elset not in section");
+    }
+    let sectionName = section.name;
+
+    return blocks_density[sectionName] ?? 0;
+}
+
+const getCapacityByElement = (element: number, blocks_capacity, lsets: Lset[], sections: Section[]): number => {
+
+    let lset = lsets.find((elset) => {
+        return elset.elements.indexOf(element) != -1;
+    })
+    if (!lset) {
+        throw new Error("Element not in elset");
+    }
+    let lsetName: string = lset.setname;
+    let section = sections.find((section) => {
+        return section.elsetName == lsetName
+    })
+    if (!section) {
+        throw new Error("Elset not in section");
+    }
+    let sectionName = section.name;
+
+    return blocks_capacity[sectionName] ?? 0;
+}
+
+
+
 const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array<number>> => {
 
     let nodes = inpData.problemData[0].nodes;
@@ -127,8 +224,37 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
 
     }
 
-
     return K;
+}
+
+const getCapacityMayrix = (inpData, blocks_density, blocks_capacity): Array<Array<number>> => {
+
+    let nodes = inpData.problemData[0].nodes;
+    let elements = inpData.problemData[0].elements;
+
+    let C: number[][] = new Array(nodes.length);
+    for (let i = 0; i < C.length; i++) {
+        C[i] = new Array(nodes.length).fill(0);
+    }
+
+    for (let i = 0; i < elements.length; i++) {
+
+        let density = getDensityByElement(elements[i][0], blocks_density, inpData.problemData[0].lsets, inpData.problemData[0].sections);
+        let capacity = getCapacityByElement(elements[i][0], blocks_capacity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
+
+        let coords: number[][] = [
+            [nodes[elements[i][1] - 1][1], [nodes[elements[i][1] - 1][2]]],
+            [nodes[elements[i][2] - 1][1], [nodes[elements[i][2] - 1][2]]],
+            [nodes[elements[i][3] - 1][1], [nodes[elements[i][3] - 1][2]]]
+
+        ]
+
+        let Ci = getLocalCapacityMatrix(coords, density, capacity);
+        C = accumulateToGlobalMatrix(C, Ci, elements[i][1], elements[i][2], elements[i][3]);
+
+    }
+
+    return C;
 }
 
 const getLocalCondictivityMatrix = (coords: number[][], Lambda: number) => {
@@ -145,6 +271,30 @@ const getLocalCondictivityMatrix = (coords: number[][], Lambda: number) => {
 
     let B = MultiplyMatrix(InverseMatrix(J), Bnat);
     return MultiplyMatrix(multiplyMatrixByNumber(transposeMatrix(B), Lambda), multiplyMatrixByNumber(B, Determinant(J) / 2));
+}
+
+const calculateTriangleArea = (coordinates: number[][]): number => {
+    const [point1, point2, point3] = coordinates;
+
+    const [x1, y1] = point1;
+    const [x2, y2] = point2;
+    const [x3, y3] = point3;
+
+    const area = 0.5 * Math.abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+
+    return area;
+}
+
+const getLocalCapacityMatrix = (coords: number[][], density: number, capacity: number): number[][] => {
+
+    let area = calculateTriangleArea(coords);
+
+    return multiplyMatrixByNumber([
+        [1 / 6, 1 / 12, 1 / 12],
+        [1 / 12, 1 / 6, 1 / 12],
+        [1 / 12, 1 / 12, 1 / 6],
+    ], density * capacity * area)
+
 }
 
 const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatrix: Array<Array<number>>, i: number, j: number, k: number): Array<Array<number>> => {
@@ -170,4 +320,4 @@ const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatri
 }
 
 
-export { computeSteadyState }
+export { computeSteadyState, computeTransitive }

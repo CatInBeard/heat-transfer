@@ -17,7 +17,7 @@ import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
-import { computeSteadyState } from './computeHeatTransfer.tsx';
+import { computeSteadyState, computeTransitive } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 
@@ -212,7 +212,18 @@ let App = () => {
       try {
         const start = performance.now();
 
-        let temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+        let temperatures;
+
+        if(state_type == "transitive"){
+          let temperatureFrames = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat);
+
+          console.log(temperatureFrames);
+
+          temperatures = temperatureFrames[temperatureFrames.length-1];
+        }
+        else{
+          temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+        }
 
         const end = performance.now();
         console.log("Solved in " + (end - start).toString() + " milliseconds.");
@@ -364,7 +375,7 @@ let App = () => {
   const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
 
-  const status = 'Press start'
+
   return (
     <div className="container-lg mt-3">
       <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>

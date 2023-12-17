@@ -30,6 +30,17 @@ const SumMatrix = (A: number[][], B: number[][]): number[][] => {
     return C;
 }
 
+const SumVector = (A: number[], B: number[]): number[] => {
+
+    let C = new Array(A.length);
+
+    for (let i = 0; i < A.length; i++) {
+        C[i] = A[i] + B[i];
+    }
+
+    return C;
+}
+
 const MultiplyMatrix = (A: number[][], B: number[][]): number[][] => {
     const rows1 = A.length;
     const cols1 = A[0].length;
@@ -55,6 +66,27 @@ const MultiplyMatrix = (A: number[][], B: number[][]): number[][] => {
     return C;
 }
 
+const MultiplyMatrixByVector = (A: number[][], v: number[]): number[] => {
+    const rows = A.length;
+    const cols = A[0].length;
+
+    if (cols !== v.length) {
+        throw new Error("The number of columns in the matrix must match the length of the vector.");
+    }
+
+    const result: number[] = [];
+
+    for (let i = 0; i < rows; i++) {
+        let sum = 0;
+        for (let j = 0; j < cols; j++) {
+            sum += A[i][j] * v[j];
+        }
+        result[i] = sum;
+    }
+
+    return result;
+}
+
 const multiplyMatrixByNumber = (matrix: number[][], number: number): number[][] => {
     const rows = matrix.length;
     const cols = matrix[0].length;
@@ -66,6 +98,17 @@ const multiplyMatrixByNumber = (matrix: number[][], number: number): number[][] 
         for (let j = 0; j < cols; j++) {
             result[i][j] = matrix[i][j] * number;
         }
+    }
+
+    return result;
+}
+
+const multiplyVectorByNumber = (matrix: number[], number: number): number[] => {
+
+    const result: number[] = [];
+
+    for (let i = 0; i < matrix.length; i++) {
+        result[i] = matrix[i] * number;
     }
 
     return result;
@@ -202,4 +245,4 @@ const Determinant = (matrix: number[][]): number => {
 
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant }
+export { transposeMatrix, SumMatrix, MultiplyMatrixByVector, multiplyVectorByNumber, SumVector, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant }
