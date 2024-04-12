@@ -1279,10 +1279,18 @@
 ** 
 *Material, name=Material-1
 *Conductivity
- 1.5,
+ 1000,
+*Density
+ 950,
+*Specific Heat
+ 1500,
 *Material, name=Material-2
 *Conductivity
- 0.5,
+ 1500,
+*Density
+ 850,
+*Specific Heat
+ 2500,
 ** ----------------------------------------------------------------
 ** 
 ** STEP: Step-1
