@@ -434,7 +434,7 @@ let App = () => {
             <label>Initial Temp:</label>
           </div>
           <div className="col">
-            <input value={initialTemp} onChange={onInitialTChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+            <input value={initialTemp} min={0} onChange={onInitialTChange} type='number' className={'form-control ' + style.inputMinSize}></input>
           </div>
           <div className="col">
             &deg;C
@@ -448,7 +448,7 @@ let App = () => {
             <label>Step increment:</label>
           </div>
           <div className="col">
-            <input value={stepIncrement} onChange={onStepIncrementChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+            <input value={stepIncrement} min={0.000000000001} onChange={onStepIncrementChange} type='number' className={'form-control ' + style.inputMinSize}></input>
           </div>
           <div className="col">
             
@@ -461,7 +461,7 @@ let App = () => {
             <label>Steps:</label>
           </div>
           <div className="col">
-            <input value={steps} onChange={onStepsChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+            <input value={steps} min={1} onChange={onStepsChange} type='number' className={'form-control ' + style.inputMinSize}></input>
           </div>
           <div className="col">
             
