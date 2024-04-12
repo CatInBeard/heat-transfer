@@ -4,20 +4,14 @@ import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, Mul
 import Big from 'big.js';
 
 
-const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback) => {
+const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback, initialTemp = 0, timeStep = 0.1, steps = 500, useBig = false) => {
 
     Big.DP = 60;
 
-    // let useBig = true;
-    let useBig = false;
-
-    let timeStep = 0.1;
-
     let freq = 1 / timeStep;
-    let steps = 5000;
 
     let K: number[][] = getConductivityMatrixTransitive(inpData, blocks_termal_conductivity);
-    
+
     let C: number[][] = getCapacityMatrix(inpData, blocks_density, blocks_capacity);
 
 
@@ -39,7 +33,7 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     let temperatureCurrentStep: number[] = [];
 
     for (let i = 0; i < F.length; i++) {
-        temperaturePrevStep.push(0);
+        temperaturePrevStep.push(initialTemp);
     }
     temperaturePrevStep = fixTemperatureFromBC(temperaturePrevStep, inpData, temperature_BC)
 
@@ -50,7 +44,7 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     let progress = 0;
 
 
-    if(useBig){
+    if (useBig) {
         let bigC = floatMatrixToBig(C);
         let bigK = floatMatrixToBig(K);
         let bigFreq = new Big(freq);
@@ -80,7 +74,7 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
             progress_callback(progress, vector)
         }
     }
-    else{
+    else {
         for (let t = 0; t < steps; t++) {
 
 
@@ -97,7 +91,7 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
             temperatureFrames.push(temperatureCurrentStep);
             temperaturePrevStep = temperatureCurrentStep;
-            
+
             progress += 100 / steps
             progress_callback(progress, temperatureCurrentStep)
         }
@@ -374,9 +368,9 @@ const getConductivityMatrixTransitive = (inpData, blocks_termal_conductivity) =>
         let Yk = nodes[elements[i][3] - 1][2];
 
 
-        let Bi: number = Yj  - Yk;
+        let Bi: number = Yj - Yk;
         let Bj: number = Yk - Yi;
-        let Bk: number = Yi - Yj ;
+        let Bk: number = Yi - Yj;
         let Ci: number = Xk - Xj;
         let Cj: number = Xi - Xk;
         let Ck: number = Xj - Xi;
@@ -436,7 +430,7 @@ const getCapacityMatrix = (inpData, blocks_density, blocks_capacity): Array<Arra
 
     for (let i = 0; i < elements.length; i++) {
 
-        
+
         let density = getDensityByElement(elements[i][0], blocks_density, inpData.problemData[0].lsets, inpData.problemData[0].sections);
         let capacity = getCapacityByElement(elements[i][0], blocks_capacity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
         let coords: number[][] = [
@@ -484,14 +478,14 @@ const calculateTriangleArea = (coordinates: number[][]): number => {
 
 const getLocalCapacityMatrix = (coords: number[][], density: number, capacity: number): number[][] => {
 
-        let Xi = coords[0][0];
-        let Yi = coords[0][1];
+    let Xi = coords[0][0];
+    let Yi = coords[0][1];
 
-        let Xj = coords[1][0];
-        let Yj = coords[1][1];
+    let Xj = coords[1][0];
+    let Yj = coords[1][1];
 
-        let Xk = coords[2][0];
-        let Yk = coords[2][1];
+    let Xk = coords[2][0];
+    let Yk = coords[2][1];
 
     let square = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
 
@@ -500,7 +494,7 @@ const getLocalCapacityMatrix = (coords: number[][], density: number, capacity: n
         [2, 1, 1],
         [1, 2, 1],
         [1, 1, 2],
-    ], density * capacity / 12 * square )
+    ], density * capacity / 12 * square)
 
 }
 

@@ -17,7 +17,7 @@ import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
-import { computeSteadyState, computeTransitive } from './computeHeatTransfer.tsx';
+import { computeSteadyState } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 
@@ -40,7 +40,9 @@ let App = () => {
 
   const [errorPopup, setErrorPopup] = useState(null);
   const [transitiveProgress, setTransitiveProgress] = useState(0);
-
+  const [initialTemp, setInitialTemp] = useState(0);
+  const [stepIncrement, setStepIncrement] = useState(0.1);
+  const [steps, setSteps] = useState(100);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -215,43 +217,44 @@ let App = () => {
 
         let temperatures;
 
-        if(state_type == "transitive"){
+        if (state_type == "transitive") {
 
           setTransitiveProgress(0)
 
-          // let temperatureFrames = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, progressCallback);
-
           const transitiveWorker = new Worker(new URL('./computeTransitiveWorker.js', import.meta.url));
-          
-          transitiveWorker.postMessage({ inpData:inpData, temperature_BC:temperature_BC, blocks_termal_conductivity:blocks_termal_conductivity, blocks_density:blocks_density, blocks_specific_heat:blocks_specific_heat });
 
-          transitiveWorker.onmessage = function(event) {
-              if(event.data.action == "done"){
-                let temperatureFrames = event.data.result;
-                temperatures = temperatureFrames[temperatureFrames.length-1];      
-                const end = performance.now();
-                console.log("Solved in " + (end - start).toString() + " milliseconds.");
-                dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
-                dispatch(setcomputingStatus({ status: "computed" }))
-                
-              }
-              else if(event.data.action == "progress"){
-                let progress = event.data.result;
-                dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
-                console.log("progress:" + progress.toFixed(2) + "%")
-                setTransitiveProgress(progress.toFixed(2))
-              }
-              else if(event.data.action == "error"){
-                let error = event.data;
-                console.error(error);
-                setErrorPopup({ title: "Error computing", text: error.message });
-              }
+          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps });
+
+          transitiveWorker.onmessage = function (event) {
+            if (event.data.action == "done") {
+              let temperatureFrames = event.data.result;
+              temperatures = temperatureFrames[temperatureFrames.length - 1];
+              const end = performance.now();
+              console.log("Solved in " + (end - start).toString() + " milliseconds.");
+              dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
+              dispatch(setcomputingStatus({ status: "computed" }))
+              transitiveWorker.terminate();
+
+            }
+            else if (event.data.action == "progress") {
+              let progress = event.data.result;
+              dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
+              console.log("progress:" + progress.toFixed(2) + "%")
+              setTransitiveProgress(progress.toFixed(2))
+            }
+            else if (event.data.action == "error") {
+              let error = event.data;
+              console.error(error);
+              setErrorPopup({ title: "Error computing", text: error.message });
+              dispatch(setcomputingStatus({ status: "ready" }))
+              transitiveWorker.terminate();
+            }
           };
 
-          
+
           return;
         }
-        else{
+        else {
           temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
           console.log(JSON.stringify(temperatures));
         }
@@ -399,7 +402,59 @@ let App = () => {
       })}
     </>
 
+  const onInitialTChange = (event) => {
+    setInitialTemp(event.target.value)
+  }
+  const onStepIncrementChange = (event) => {
+    setStepIncrement(event.target.value)
+  }
+  const onStepsChange = (event) => {
+    setSteps(event.target.value)
+  }
 
+  const transitiveSettings = state_type == "steady" ? <></> :
+    <>
+      <div className='p-2 form-group' key="initalT">
+        <div className="row">
+          <div className='col'>
+            <label>Initial Temp:</label>
+          </div>
+          <div className="col">
+            <input value={initialTemp} onChange={onInitialTChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+          </div>
+          <div className="col">
+            &deg;C
+          </div>
+        </div>
+      </div>
+
+      <div className='p-2 form-group' key="stepIncrement">
+        <div className="row">
+          <div className='col'>
+            <label>Step increment:</label>
+          </div>
+          <div className="col">
+            <input value={stepIncrement} onChange={onStepIncrementChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+          </div>
+          <div className="col">
+            
+          </div>
+        </div>
+      </div>
+      <div className='p-2 form-group' key="steps">
+        <div className="row">
+          <div className='col'>
+            <label>Steps:</label>
+          </div>
+          <div className="col">
+            <input value={steps} onChange={onStepsChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+          </div>
+          <div className="col">
+            
+          </div>
+        </div>
+      </div>
+    </>;
 
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
   const upload_component = upload_status ? <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
@@ -431,6 +486,7 @@ let App = () => {
             Change temperature
           </div>
           {BCeditor}
+          {transitiveSettings}
         </div>
         <div className='p-2 d-flex flex-column'>
           <div className='p-2'>Load data</div>
