@@ -1,32 +1,39 @@
-import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, SumMatrix } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, SumMatrix, frobeniusNorm } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
-
-type TemperaturedNode = {
-    x: number,
-    y: number,
-    temperature: number
-}
+import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix.ts"
+import Big from 'big.js';
 
 
-const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity) => {
+const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback) => {
 
-    let timeStep = 0.01;
-    let steps = 1000;
+    Big.DP = 60;
 
-    let Theta = 1;
+    // let useBig = true;
+    let useBig = false;
 
-    let K = getConductivityMatrix(inpData, blocks_termal_conductivity);
+    let timeStep = 0.1;
 
-    let C = getCapacityMayrix(inpData, blocks_density, blocks_capacity);
+    let freq = 1 / timeStep;
+    let steps = 5000;
 
-    K = applyTemperatureBC(K, inpData);
-    C = applyTemperatureBC(C, inpData);
-
-    let F = getTermalForcesFromBC(inpData, temperature_BC);
-
-    let K_new = SumMatrix(C, multiplyMatrixByNumber(K,timeStep * Theta));
-
+    let K: number[][] = getConductivityMatrixTransitive(inpData, blocks_termal_conductivity);
     
+    let C: number[][] = getCapacityMatrix(inpData, blocks_density, blocks_capacity);
+
+
+    K = applyTemperatureBCToKTransitive(K, inpData);
+
+
+    let F: number[] = getFForTransitive(K, inpData);
+
+    K = applyTemperatureBCToKTransitiveStep2(K, inpData);
+
+
+    if (progress_callback === null) {
+        progress_callback = (progress, data) => {
+            console.log("progress: " + progress + "%")
+        }
+    }
 
     let temperaturePrevStep: number[] = [];
     let temperatureCurrentStep: number[] = [];
@@ -34,27 +41,66 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     for (let i = 0; i < F.length; i++) {
         temperaturePrevStep.push(0);
     }
+    temperaturePrevStep = fixTemperatureFromBC(temperaturePrevStep, inpData, temperature_BC)
 
     let temperatureFrames: number[][] = [];
 
     temperatureFrames.push(temperaturePrevStep);
 
-    for (let t = 0; t < timeStep * steps; t += timeStep) {
+    let progress = 0;
 
-        let F_new =  SumVector(MultiplyMatrixByVector( SumMatrix(C, multiplyMatrixByNumber(K, -1*timeStep*(1 - Theta))), temperaturePrevStep), multiplyVectorByNumber(F,timeStep))
 
-        temperatureCurrentStep = solveLinearEquationSystem(K_new, F_new);
+    if(useBig){
+        let bigC = floatMatrixToBig(C);
+        let bigK = floatMatrixToBig(K);
+        let bigFreq = new Big(freq);
+        let bigF = floatVectorToBig(F);
+        let bigTemperaturePrevStep = floatVectorToBig(temperaturePrevStep);
+        let bigTemperatureCurrentStep: Big[] = [];
 
-        // temperatureCurrentStep = solveLinearEquationSystem(
-        //     multiplyMatrixByNumber(C, 1 / timeStep),
-        //     SumVector(
-        //         SumVector(F, multiplyVectorByNumber(MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
-        //         multiplyVectorByNumber(temperaturePrevStep, 1 / timeStep)
-        //     )
-        // )
+        for (let t = 0; t < steps; t++) {
 
-        temperatureFrames.push(temperatureCurrentStep);
-        temperaturePrevStep = temperatureCurrentStep;
+
+            let A = multiplyMatrixByNumberBig(bigC, bigFreq)
+            let b = SumVectorBig(
+                SumVectorBig(bigF, multiplyVectorByNumberBig(
+                    MultiplyMatrixByVectorBig(bigK, bigTemperaturePrevStep), new Big(-1))),
+                multiplyVectorByNumberBig(
+                    MultiplyMatrixByVectorBig(bigC, bigTemperaturePrevStep), bigFreq))
+
+            let Temperature = solveLinearEquationSystemBig(A, b)
+
+            bigTemperatureCurrentStep = fixTemperatureFromBCBig(Temperature, inpData, temperature_BC)
+
+            let vector = BigVectorToFloat(bigTemperatureCurrentStep)
+            temperatureFrames.push(vector);
+            bigTemperaturePrevStep = bigTemperatureCurrentStep;
+
+            progress += 100 / steps
+            progress_callback(progress, vector)
+        }
+    }
+    else{
+        for (let t = 0; t < steps; t++) {
+
+
+            let A = multiplyMatrixByNumber(C, freq)
+            let b = SumVector(
+                SumVector(F, multiplyVectorByNumber(
+                    MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
+                multiplyVectorByNumber(
+                    MultiplyMatrixByVector(C, temperaturePrevStep), freq))
+
+            let Temperature = solveLinearEquationSystem(A, b)
+
+            temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC)
+
+            temperatureFrames.push(temperatureCurrentStep);
+            temperaturePrevStep = temperatureCurrentStep;
+            
+            progress += 100 / steps
+            progress_callback(progress, temperatureCurrentStep)
+        }
     }
 
 
@@ -71,10 +117,37 @@ const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity)
 
     let F = getTermalForcesFromBC(inpData, temperature_BC);
 
-    let temperatures = solveLinearEquationSystem(K, F);
+    let temperatures = fixTemperatureFromBC(solveLinearEquationSystem(K, F), inpData, temperature_BC);
 
     return temperatures
 
+}
+
+const floatVectorToBig = (F: number[]): Big[] => {
+    let bigF: Big[] = [];
+    for (let i = 0; i < F.length; i++) {
+        bigF[i] = new Big(F[i]);
+    }
+    return bigF;
+}
+
+const BigVectorToFloat = (bigF: Array<Big>): number[] => {
+    let F: number[] = [];
+    for (let i = 0; i < bigF.length; i++) {
+        F[i] = bigF[i].toNumber()
+    }
+    return F;
+}
+
+const floatMatrixToBig = (A: number[][]): Big[][] => {
+    let bigA: Big[][] = [];
+    for (let i = 0; i < A.length; i++) {
+        bigA[i] = [];
+        for (let j = 0; j < A.length; j++) {
+            bigA[i][j] = new Big(A[i][j]);
+        }
+    }
+    return bigA;
 }
 
 
@@ -128,13 +201,90 @@ const applyTemperatureBC = (K: Array<Array<number>>, inpData): Array<Array<numbe
         nset.nodes.forEach((node) => {
             for (let i = 0; i < K.length; i++) {
                 K[node - 1][i] = 0
-                K[node - 1][node - 1] = 1
             }
+            K[node - 1][node - 1] = 1
         })
     });
 
 
     return K;
+}
+
+const applyTemperatureBCToKTransitive = (K: Array<Array<number>>, inpData): Array<Array<number>> => {
+
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBC) => {
+        let setName = temperature.setName
+        let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
+            return nset.setname == setName;
+        });
+        if (!nset) {
+            throw new Error("Nset not found");
+        }
+
+        nset.nodes.forEach((node) => {
+            for (let i = 0; i < K.length; i++) {
+                if (i != node - 1) {
+                    K[node - 1][i] = 0
+                }
+            }
+        })
+    });
+
+    return K;
+}
+
+const applyTemperatureBCToKTransitiveStep2 = (K: Array<Array<number>>, inpData): Array<Array<number>> => {
+
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBC) => {
+        let setName = temperature.setName
+        let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
+            return nset.setname == setName;
+        });
+        if (!nset) {
+            throw new Error("Nset not found");
+        }
+
+        nset.nodes.forEach((node) => {
+            for (let i = 0; i < K.length; i++) {
+                if (i != node - 1) {
+                    K[i][node - 1] = 0
+                }
+            }
+        })
+    });
+
+    return K;
+}
+
+const getFForTransitive = (K: Array<Array<number>>, inpData): number[] => {
+    let F: number[] = [];
+
+    for (let i = 0; i < K.length; i++) {
+        F.push(0);
+    }
+
+
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBC) => {
+        let setName = temperature.setName
+        let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
+            return nset.setname == setName;
+        });
+        if (!nset) {
+            throw new Error("Nset not found");
+        }
+
+        nset.nodes.forEach((node) => {
+            F[node - 1] = K[node - 1][node - 1] * temperature.temperature;
+            for (let i = 0; i < F.length; i++) {
+                if (i != node - 1) {
+                    F[i] -= K[i][node - 1] * temperature.temperature;
+                }
+            }
+        })
+    });
+
+
+    return F;
 }
 
 const getConductivityByElement = (element: number, blocks_termal_conductivity, lsets: Lset[], sections: Section[]): number => {
@@ -198,6 +348,53 @@ const getCapacityByElement = (element: number, blocks_capacity, lsets: Lset[], s
 }
 
 
+const getConductivityMatrixTransitive = (inpData, blocks_termal_conductivity) => {
+    let nodes = inpData.problemData[0].nodes;
+    let elements = inpData.problemData[0].elements;
+
+    let K: number[][] = new Array(nodes.length);
+    for (let i = 0; i < K.length; i++) {
+        K[i] = new Array(nodes.length).fill(0);
+    }
+
+    for (let i = 0; i < elements.length; i++) {
+
+        let conductivity = getConductivityByElement(elements[i][0], blocks_termal_conductivity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
+
+        let conductivityMatrix = [[conductivity, 0], [0, conductivity]]
+
+
+        let Xi = nodes[elements[i][1] - 1][1];
+        let Yi = nodes[elements[i][1] - 1][2];
+
+        let Xj = nodes[elements[i][2] - 1][1];
+        let Yj = nodes[elements[i][2] - 1][2];
+
+        let Xk = nodes[elements[i][3] - 1][1];
+        let Yk = nodes[elements[i][3] - 1][2];
+
+
+        let Bi: number = Yj  - Yk;
+        let Bj: number = Yk - Yi;
+        let Bk: number = Yi - Yj ;
+        let Ci: number = Xk - Xj;
+        let Cj: number = Xi - Xk;
+        let Ck: number = Xj - Xi;
+
+        let Square = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
+
+        let B: number[][] = [[Bi, Bj, Bk], [Ci, Cj, Ck]];
+
+        let Ki = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(B), conductivityMatrix), B), 1 / 4 * Square)
+
+        K = accumulateToGlobalMatrix(K, Ki, elements[i][1], elements[i][2], elements[i][3]);
+
+    }
+
+    return K;
+
+}
+
 
 const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array<number>> => {
 
@@ -227,7 +424,7 @@ const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array
     return K;
 }
 
-const getCapacityMayrix = (inpData, blocks_density, blocks_capacity): Array<Array<number>> => {
+const getCapacityMatrix = (inpData, blocks_density, blocks_capacity): Array<Array<number>> => {
 
     let nodes = inpData.problemData[0].nodes;
     let elements = inpData.problemData[0].elements;
@@ -239,13 +436,13 @@ const getCapacityMayrix = (inpData, blocks_density, blocks_capacity): Array<Arra
 
     for (let i = 0; i < elements.length; i++) {
 
+        
         let density = getDensityByElement(elements[i][0], blocks_density, inpData.problemData[0].lsets, inpData.problemData[0].sections);
         let capacity = getCapacityByElement(elements[i][0], blocks_capacity, inpData.problemData[0].lsets, inpData.problemData[0].sections);
-
         let coords: number[][] = [
-            [nodes[elements[i][1] - 1][1], [nodes[elements[i][1] - 1][2]]],
-            [nodes[elements[i][2] - 1][1], [nodes[elements[i][2] - 1][2]]],
-            [nodes[elements[i][3] - 1][1], [nodes[elements[i][3] - 1][2]]]
+            [nodes[elements[i][1] - 1][1], nodes[elements[i][1] - 1][2]],
+            [nodes[elements[i][2] - 1][1], nodes[elements[i][2] - 1][2]],
+            [nodes[elements[i][3] - 1][1], nodes[elements[i][3] - 1][2]]
 
         ]
 
@@ -287,13 +484,23 @@ const calculateTriangleArea = (coordinates: number[][]): number => {
 
 const getLocalCapacityMatrix = (coords: number[][], density: number, capacity: number): number[][] => {
 
-    let area = calculateTriangleArea(coords);
+        let Xi = coords[0][0];
+        let Yi = coords[0][1];
+
+        let Xj = coords[1][0];
+        let Yj = coords[1][1];
+
+        let Xk = coords[2][0];
+        let Yk = coords[2][1];
+
+    let square = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
+
 
     return multiplyMatrixByNumber([
-        [1 / 6, 1 / 12, 1 / 12],
-        [1 / 12, 1 / 6, 1 / 12],
-        [1 / 12, 1 / 12, 1 / 6],
-    ], density * capacity * area)
+        [2, 1, 1],
+        [1, 2, 1],
+        [1, 1, 2],
+    ], density * capacity / 12 * square )
 
 }
 
@@ -317,6 +524,40 @@ const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatri
     globalMatrix[k][j] += localMatrix[2][1]
 
     return globalMatrix;
+}
+
+const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC): number[] => {
+
+    for (let i = 0; i < temperature_BC.length; i++) {
+        let BC: TemperatureBC = temperature_BC[i];
+
+        let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
+
+        for (let i = 0; i < nodes.length; i++) {
+            let node: number = nodes[i];
+            temperature[node - 1] = BC.temperature;
+        }
+
+    }
+
+    return temperature
+}
+
+const fixTemperatureFromBCBig = (temperature: Big[], inpData, temperature_BC): Big[] => {
+
+    for (let i = 0; i < temperature_BC.length; i++) {
+        let BC: TemperatureBC = temperature_BC[i];
+
+        let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
+
+        for (let i = 0; i < nodes.length; i++) {
+            let node: number = nodes[i];
+            temperature[node - 1] = new Big(BC.temperature);
+        }
+
+    }
+
+    return temperature
 }
 
 

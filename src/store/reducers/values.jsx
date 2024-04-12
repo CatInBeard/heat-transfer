@@ -135,6 +135,6 @@ export const { toggleHint,setHeatTranserStatus, toggleUpload, toggleShowLoadFrom
   toggleBlockVisibility, setBlockTermalConductivity,
   setBCTemperature, setHeatStateType,
   saveInpData, setcomputingStatus,
-  setBlockDensity, setBlockSpecificHeat  } = valuesSlice.actions
+  setBlockDensity, setBlockSpecificHeat } = valuesSlice.actions
 
 export default valuesSlice.reducer

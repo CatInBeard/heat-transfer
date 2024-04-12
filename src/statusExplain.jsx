@@ -1,4 +1,4 @@
-const getStatusText = (status) => {
+const getStatusText = (status, state_type, progress) => {
 
     switch(status){
         case "waiting":
@@ -8,6 +8,9 @@ const getStatusText = (status) => {
         case "ready":
             return "Ready to compute"
         case "computing":
+            if(state_type == "transitive"){
+                return "Computing, please wait, progress " + progress + "%"    
+            }
             return "Computing, please wait"
         case "computed":
             return "Computing finished"

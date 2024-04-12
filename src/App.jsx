@@ -39,6 +39,7 @@ let App = () => {
   const show_load_from_library = useSelector((state) => state.values.show_load_from_library)
 
   const [errorPopup, setErrorPopup] = useState(null);
+  const [transitiveProgress, setTransitiveProgress] = useState(0);
 
 
   const canvasRef = useRef(null);
@@ -215,14 +216,44 @@ let App = () => {
         let temperatures;
 
         if(state_type == "transitive"){
-          let temperatureFrames = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat);
 
-          console.log(temperatureFrames);
+          setTransitiveProgress(0)
 
-          temperatures = temperatureFrames[temperatureFrames.length-1];
+          // let temperatureFrames = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, progressCallback);
+
+          const transitiveWorker = new Worker(new URL('./computeTransitiveWorker.js', import.meta.url));
+          
+          transitiveWorker.postMessage({ inpData:inpData, temperature_BC:temperature_BC, blocks_termal_conductivity:blocks_termal_conductivity, blocks_density:blocks_density, blocks_specific_heat:blocks_specific_heat });
+
+          transitiveWorker.onmessage = function(event) {
+              if(event.data.action == "done"){
+                let temperatureFrames = event.data.result;
+                temperatures = temperatureFrames[temperatureFrames.length-1];      
+                const end = performance.now();
+                console.log("Solved in " + (end - start).toString() + " milliseconds.");
+                dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
+                dispatch(setcomputingStatus({ status: "computed" }))
+                
+              }
+              else if(event.data.action == "progress"){
+                let progress = event.data.result;
+                dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
+                console.log("progress:" + progress.toFixed(2) + "%")
+                setTransitiveProgress(progress.toFixed(2))
+              }
+              else if(event.data.action == "error"){
+                let error = event.data;
+                console.error(error);
+                setErrorPopup({ title: "Error computing", text: error.message });
+              }
+          };
+
+          
+          return;
         }
         else{
           temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
+          console.log(JSON.stringify(temperatures));
         }
 
         const end = performance.now();
@@ -249,8 +280,8 @@ let App = () => {
         Steady-state
       </div>
       <div className="col">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
+        <div className="form-check form-switch">
+          <input className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
         </div>
       </div>
       <div className="col">
@@ -417,7 +448,7 @@ let App = () => {
               </div>
             </div>
           </div>
-          <div className='p-2'>Status: <b>{getStatusText(computingStatus)}</b></div>
+          <div className='p-2'>Status: <b>{getStatusText(computingStatus, state_type, transitiveProgress)}</b></div>
           {statusData}
           <div className='p-2'>
             {stateSwitcher}

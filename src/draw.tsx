@@ -166,8 +166,8 @@ const drawTemperatureLegend = (canvas: HTMLCanvasElement, min: number, max: numb
         ctx.fillRect(startFrom, canvas.height - i * canvas.height / 120, 20, canvas.height / 80);
         ctx.font = '20px Arial';
         ctx.fillStyle = 'black';
-        ctx.fillText(min.toString(), startFrom + 25, canvas.height - 25);
-        ctx.fillText(max.toString(), startFrom + 25, canvas.height * 0.2 + 25);
+        ctx.fillText(min.toFixed(2).toString(), startFrom + 25, canvas.height - 25);
+        ctx.fillText(max.toFixed(2).toString(), startFrom + 25, canvas.height * 0.2 + 25);
     }
 }
 

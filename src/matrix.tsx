@@ -224,25 +224,45 @@ const solveLinearEquationSystem = (A: number[][], b: number[]): number[] => {
 
 const Determinant = (matrix: number[][]): number => {
     if (matrix.length !== matrix[0].length) {
-        throw new Error('Matrix must be square');
+        throw new Error("Matrix must be square");
     }
 
-    const n = matrix.length;
-    let det = 1;
+    if (matrix.length === 1) {
+        return matrix[0][0];
+    }
 
-    for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const factor = matrix[j][i] / matrix[i][i];
-            for (let k = i; k < n; k++) {
-                matrix[j][k] -= factor * matrix[i][k];
-            }
-        }
-        det *= matrix[i][i];
+    if (matrix.length === 2) {
+        return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
+    }
+
+    let det = 0;
+
+    for (let i = 0; i < matrix.length; i++) {
+        det += matrix[0][i] * cofactor(matrix, 0, i);
     }
 
     return det;
 }
 
+const cofactor = (matrix: number[][], row: number, col: number): number => {
+    const subMatrix = matrix.filter((_, r) => r !== row).map(row => row.filter((_, c) => c !== col));
+    const sign = (row + col) % 2 === 0 ? 1 : -1;
+    
+    return sign * Determinant(subMatrix);
+}
+
+const frobeniusNorm = (matrix: number[][]): number => {
+    let sum = 0;
+    
+    for (let i = 0; i < matrix.length; i++) {
+        for (let j = 0; j < matrix[i].length; j++) {
+            sum += matrix[i][j] ** 2;
+        }
+    }
+    
+    return Math.sqrt(sum);
+}
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrixByVector, multiplyVectorByNumber, SumVector, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant }
+
+export { transposeMatrix, SumMatrix, MultiplyMatrixByVector, multiplyVectorByNumber, SumVector, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant, frobeniusNorm }
