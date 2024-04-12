@@ -96,8 +96,8 @@ const valuesSlice = createSlice({
 
         if(material){
           state.blocks_termal_conductivity[section.name] = material.conductivity
-          state.blocks_specific_heat[section.name] = ( (material.density ?? 0) > 0 ) ? material.density : 0
-          state.blocks_density[section.name] = ( (material.specificHeat ?? 0) > 0 ) ? material.specificHeat : 0
+          state.blocks_specific_heat[section.name] = ( (material.specificHeat ?? 0) > 0 ) ? material.specificHeat : 0
+          state.blocks_density[section.name] = ( (material.density ?? 0) > 0 ) ? material.density : 0
         }
         else{
           state.blocks_termal_conductivity[section.name] = 0

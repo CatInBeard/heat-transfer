@@ -44,7 +44,7 @@ type Step = {
     stateType: string
     boundaries: {
         temperature: Array<TemperatureBC>
-    } ,
+    },
 }
 
 type TemperatureBC = {
@@ -156,7 +156,11 @@ const getGeneratedBy = (inpDataLines: Array<string>, generatedByLine: number) =>
 
 const getProblemData = (inpDataLines: Array<string>): Array<partProblem> => {
 
-    const parts = findParts(inpDataLines);
+    let parts = findParts(inpDataLines);
+
+    if(parts.length <= 1 && parts[0].length < 3){
+        parts = findParts(inpDataLines, true);   
+    }
 
     let partsProblems: Array<partProblem> = [];
 
@@ -170,7 +174,6 @@ const getProblemData = (inpDataLines: Array<string>): Array<partProblem> => {
 }
 
 const parsePartLines = (part: Array<string>): partProblem => {
-
 
     const regexGenBy: RegExp = /Part, name=(.*?)$/;
 
@@ -221,11 +224,11 @@ const parsePartLines = (part: Array<string>): partProblem => {
             lsetFlag = false;
             sectionFlag = false;
         }
-        if (part[i].startsWith("*Node")) {
+        if (part[i].trim() == "*Node") {
             nodeParsingFlag = true;
             continue;
         }
-        if (part[i].startsWith("*Element")) {
+        if (part[i].startsWith("*Element,")) {
             elementParsingFlag = true;
             continue;
         }
@@ -290,7 +293,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
         }
         if (nsetFlag) {
             let setNodes = part[i].split(',').map(num => parseFloat(num.trim()))
-            if (setNodes.length == 3 && part[i - 1].startsWith("*Nset") && (setNodes[0]+1 != setNodes[1] && setNodes[1]+1 != setNodes[2])) {
+            if (setNodes.length == 3 && part[i - 1].startsWith("*Nset") && (setNodes[0] + 1 != setNodes[1] && setNodes[1] + 1 != setNodes[2])) {
                 nsets[nsets.length - 1].nodes = range(setNodes[0], setNodes[1], setNodes[2]);
             }
             else {
@@ -299,7 +302,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
         }
         if (lsetFlag) {
             let setElements = part[i].split(',').map(num => parseFloat(num.trim()))
-            if (setElements.length == 3 && part[i - 1].startsWith("*Elset") && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
+            if (setElements.length == 3 && part[i - 1].startsWith("*Elset") && (setElements[0] + 1 != setElements[1] && setElements[1] + 1 != setElements[2])) {
                 lsets[lsets.length - 1].elements = range(setElements[0], setElements[1], setElements[2]);
             }
             else {
@@ -314,7 +317,7 @@ const parsePartLines = (part: Array<string>): partProblem => {
     return { name: partName, nodes: nodes, elements: elements, nsets: nsets, lsets: lsets, sections: sections };
 }
 
-const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
+const findParts = (inpDataLines: Array<string>, onlyStart: boolean = false): Array<Array<string>> => {
 
     let parts: Array<Array<string>> = [];
 
@@ -336,7 +339,7 @@ const findParts = (inpDataLines: Array<string>): Array<Array<string>> => {
             parts.push([line])
             continue
         }
-        if (line.startsWith("*End Part")) {
+        if (line.startsWith("*End Part")  && !onlyStart) {
             currentPart++;
             continue
         }
@@ -453,7 +456,7 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
         }
         if (nsetFlag) {
             let setNodes = assemblyStrings[i].split(',').map(num => parseFloat(num.trim()))
-            if (setNodes.length == 3 && assemblyStrings[i - 1].startsWith("*Nset") && (setNodes[0]+1 != setNodes[1] && setNodes[1]+1 != setNodes[2]) ) {
+            if (setNodes.length == 3 && assemblyStrings[i - 1].startsWith("*Nset") && (setNodes[0] + 1 != setNodes[1] && setNodes[1] + 1 != setNodes[2])) {
                 nsets[nsets.length - 1].nodes = range(setNodes[0], setNodes[1], setNodes[2]);
             }
             else {
@@ -462,7 +465,7 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
         }
         if (lsetFlag) {
             let setElements = assemblyStrings[i].split(',').map(num => parseFloat(num.trim()))
-            if (setElements.length == 3 && assemblyStrings[i - 1].startsWith("*Elset")  && (setElements[0]+1 != setElements[1] && setElements[1]+1 != setElements[2])) {
+            if (setElements.length == 3 && assemblyStrings[i - 1].startsWith("*Elset") && (setElements[0] + 1 != setElements[1] && setElements[1] + 1 != setElements[2])) {
                 lsets[lsets.length - 1].elements = range(setElements[0], setElements[1], setElements[2]);
             }
             else {
@@ -472,7 +475,7 @@ const getAssemblyData = (inpDataLines: Array<string>): Assembly => {
 
     }
 
-    return {nsets: nsets, lsets: lsets}
+    return { nsets: nsets, lsets: lsets }
 
 }
 
@@ -560,7 +563,7 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                     name: match[1],
                     stateType: "",
                     jobType: "",
-                    boundaries: {temperature: []},
+                    boundaries: { temperature: [] },
                 })
             } else {
                 throw new InpParsingError("Job name not found");
@@ -592,21 +595,21 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                 const regex: RegExp = /Name: (.*?) Type: (.*?)$/;
                 const matches: RegExpMatchArray | null = stepStrings[i - 1].match(regex);
 
-                let type =  '';
+                let type = '';
 
                 if (matches && matches.length === 3) {
 
                     type = matches[2];
 
-                    switch(type){
+                    switch (type) {
                         case "Temperature":
-                        steps[steps.length - 1].boundaries.temperature.push({
-                            name: matches[1],
-                            type: matches[2],
-                            setName: "",
-                            temperature: 0
-                        })
-                        break;
+                            steps[steps.length - 1].boundaries.temperature.push({
+                                name: matches[1],
+                                type: matches[2],
+                                setName: "",
+                                temperature: 0
+                            })
+                            break;
                         default:
                             throw new InpParsingError("Unknown BC type!");
                     }
@@ -620,16 +623,16 @@ const getStepData = (inpDataLines: Array<string>): Array<Step> => {
                 }
 
 
-                switch(type){
+                switch (type) {
                     case "Temperature":
-                    
-                    
-                    let BCdata = stepStrings[i + 1].split(',').map(num => num.trim())
 
-                    steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].setName = BCdata[0]
 
-                    steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].temperature = parseFloat(BCdata[BCdata.length - 1])
-                break;
+                        let BCdata = stepStrings[i + 1].split(',').map(num => num.trim())
+
+                        steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].setName = BCdata[0]
+
+                        steps[steps.length - 1].boundaries.temperature[steps[steps.length - 1].boundaries.temperature.length - 1].temperature = parseFloat(BCdata[BCdata.length - 1])
+                        break;
                     default:
                         throw new InpParsingError("Unknown BC type!");
                 }
@@ -652,12 +655,12 @@ const checkInpDataForHeatTransfer = (inpData) => {
     for (let i = 0; i < steps.length; i++) {
         let step: Step = steps[i];
 
-        if(step.jobType != "Heat Transfer"){
+        if (step.jobType != "Heat Transfer") {
             throw new InpParsingError("The problem is not thermal");
         }
     }
 
-    if(inpData.problemData[0].nodes.length === 0){
+    if (inpData.problemData[0].nodes.length === 0) {
         throw new InpParsingError("Nodes not found in part");
     }
 }

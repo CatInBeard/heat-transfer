@@ -43,6 +43,7 @@ let App = () => {
   const [initialTemp, setInitialTemp] = useState(0);
   const [stepIncrement, setStepIncrement] = useState(0.1);
   const [steps, setSteps] = useState(100);
+  const [elementsCount, setElementsCount] = useState(0);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -96,6 +97,11 @@ let App = () => {
           Model name: {inpData.heading.modelName}
         </div>
       </div>
+      <div className="row">
+        <div className="col p-1">
+          Elements: {elementsCount}
+        </div>
+      </div>
     </div> : <></>;
 
   const onBlockConductivityChange = (event) => {
@@ -145,6 +151,7 @@ let App = () => {
       try {
         var text = e.target.result;
         let inpData = parseInpText(text);
+        setElementsCount(inpData.problemData[0].elements.length);
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
         dispatch(setcomputingStatus({ status: "ready" }))
@@ -414,6 +421,13 @@ let App = () => {
 
   const transitiveSettings = state_type == "steady" ? <></> :
     <>
+    <div className='p-2 form-group' key="initalT">
+        <div className="row">
+          <div className='col'>
+            <label>Transitive settings:</label>
+          </div>
+        </div>
+      </div>
       <div className='p-2 form-group' key="initalT">
         <div className="row">
           <div className='col'>
