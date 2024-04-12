@@ -196,6 +196,7 @@ let App = () => {
         let inpData = parseInpText(text);
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
+        setElementsCount(inpData.problemData[0].elements.length);
         dispatch(setcomputingStatus({ status: "ready" }))
       }
       catch (error) {
