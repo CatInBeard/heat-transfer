@@ -5,7 +5,9 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
 
     const fixturesInpFileNames = [
         "200-elem.inp",
-        "760-elem.inp"
+        "760-elem.inp",
+        "1720-elem.inp",
+        "6651-elem.inp"
     ]
 
     const remoteLib = [
