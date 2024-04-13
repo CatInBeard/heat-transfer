@@ -335,7 +335,7 @@ let App = () => {
                 &rho;
               </div>
               <div className="col">
-                <input data-section-name={section.name} min={0} value={block_density} onChange={onBlockDensityChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+                <input data-section-name={section.name} min={0} value={block_density} onChange={onBlockDensityChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
               </div>
               <div className='col'>
                 <label>kg/m<sup>3</sup></label>
@@ -348,7 +348,7 @@ let App = () => {
                 <label>C</label>
               </div>
               <div className="col">
-                <input data-section-name={section.name} min={0} value={block_specific_heat} onChange={onBlockSpecificHeatChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+                <input data-section-name={section.name} min={0} value={block_specific_heat} onChange={onBlockSpecificHeatChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
               </div>
               <div className='col'>
                 <label>J/°С</label>
@@ -375,7 +375,7 @@ let App = () => {
                 <label>P</label>
               </div>
               <div className="col">
-                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
               </div>
               <div className='col'>
                 <label>W/mK</label>
@@ -422,7 +422,7 @@ let App = () => {
 
   const transitiveSettings = state_type == "steady" ? <></> :
     <>
-    <div className='p-2 form-group' key="initalT">
+    <div className='p-2 form-group' key="transitiveSettings">
         <div className="row">
           <div className='col'>
             <label>Transitive settings:</label>

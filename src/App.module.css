@@ -5,3 +5,6 @@
 .inputMinSize{
     min-width: 4em;
 }
+.inputMinSizeLarge{
+    min-width: 8em;
+}
