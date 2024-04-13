@@ -54,6 +54,13 @@ type TemperatureBC = {
     temperature: number
 }
 
+type TemperatureBCTransitive = {
+    name: string,
+    type: string,
+    setName: string,
+    temperature: string
+}
+
 type Assembly = {
     nsets: Array<Nset>,
     lsets: Array<Lset>
@@ -665,4 +672,4 @@ const checkInpDataForHeatTransfer = (inpData) => {
     }
 }
 
-export { parseInpText, checkInpDataForHeatTransfer, InpParsingError, Lset, Nset, Section, TemperatureBC }
+export { parseInpText, checkInpDataForHeatTransfer, InpParsingError, Lset, Nset, Section, TemperatureBC, TemperatureBCTransitive }

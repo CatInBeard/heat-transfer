@@ -8,3 +8,6 @@
 .inputMinSizeLarge{
     min-width: 8em;
 }
+.helpCursor {
+    cursor: pointer
+}

@@ -1,6 +1,7 @@
 import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, SumMatrix, frobeniusNorm } from "./matrix.tsx";
-import { Nset, Lset, Section, TemperatureBC } from "./inpParse"
+import { Nset, Lset, Section, TemperatureBC, TemperatureBCTransitive } from "./inpParse"
 import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix.ts"
+import { evaluateMathExpression } from "./mathExpression.ts"
 import Big from 'big.js';
 
 
@@ -15,12 +16,12 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     let C: number[][] = getCapacityMatrix(inpData, blocks_density, blocks_capacity);
 
 
-    K = applyTemperatureBCToKTransitive(K, inpData);
+    let KForF = applyTemperatureBCToKTransitive(K, inpData);
 
 
-    let F: number[] = getFForTransitive(K, inpData);
+    let F: number[] = getFForTransitive(KForF, inpData);
 
-    K = applyTemperatureBCToKTransitiveStep2(K, inpData);
+    K = applyTemperatureBCToKTransitiveStep2(KForF, inpData);
 
 
     if (progress_callback === null) {
@@ -43,6 +44,7 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
     let progress = 0;
 
+    let realTime = 0;
 
     if (useBig) {
         let bigC = floatMatrixToBig(C);
@@ -77,6 +79,8 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     else {
         for (let t = 0; t < steps; t++) {
 
+            F = getFForTransitive(KForF, inpData, realTime);
+            
 
             let A = multiplyMatrixByNumber(C, freq)
             let b = SumVector(
@@ -87,13 +91,14 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
             let Temperature = solveLinearEquationSystem(A, b)
 
-            temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC)
+            temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
 
             temperatureFrames.push(temperatureCurrentStep);
             temperaturePrevStep = temperatureCurrentStep;
 
             progress += 100 / steps
             progress_callback(progress, temperatureCurrentStep)
+            realTime += timeStep
         }
     }
 
@@ -250,7 +255,7 @@ const applyTemperatureBCToKTransitiveStep2 = (K: Array<Array<number>>, inpData):
     return K;
 }
 
-const getFForTransitive = (K: Array<Array<number>>, inpData): number[] => {
+const getFForTransitive = (K: Array<Array<number>>, inpData, t: number = 0): number[] => {
     let F: number[] = [];
 
     for (let i = 0; i < K.length; i++) {
@@ -258,7 +263,7 @@ const getFForTransitive = (K: Array<Array<number>>, inpData): number[] => {
     }
 
 
-    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBC) => {
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBCTransitive) => {
         let setName = temperature.setName
         let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
             return nset.setname == setName;
@@ -267,11 +272,15 @@ const getFForTransitive = (K: Array<Array<number>>, inpData): number[] => {
             throw new Error("Nset not found");
         }
 
+        console.log(temperature.temperature)
+
+        let temp = evaluateMathExpression(temperature.temperature.toString(), t);
+
         nset.nodes.forEach((node) => {
-            F[node - 1] = K[node - 1][node - 1] * temperature.temperature;
+            F[node - 1] = K[node - 1][node - 1] * temp;
             for (let i = 0; i < F.length; i++) {
                 if (i != node - 1) {
-                    F[i] -= K[i][node - 1] * temperature.temperature;
+                    F[i] -= K[i][node - 1] * temp;
                 }
             }
         })
@@ -520,16 +529,18 @@ const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatri
     return globalMatrix;
 }
 
-const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC): number[] => {
+const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC, t:number =0): number[] => {
 
     for (let i = 0; i < temperature_BC.length; i++) {
-        let BC: TemperatureBC = temperature_BC[i];
+        let BC: TemperatureBCTransitive = temperature_BC[i];
 
         let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
 
+        let temp = evaluateMathExpression(BC.temperature.toString(),t);
+
         for (let i = 0; i < nodes.length; i++) {
             let node: number = nodes[i];
-            temperature[node - 1] = BC.temperature;
+            temperature[node - 1] = temp;
         }
 
     }

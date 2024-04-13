@@ -9,6 +9,7 @@ import {
   setcomputingStatus, setHeatStateType
 } from './store/reducers/values.jsx'
 import HintComponent from './components/HintComponent.jsx';
+import ExpressionHelpComponent from "./components/ExpressionHelpComponent.jsx"
 import UploadComponent from './components/UploadComponent.jsx';
 import { parseInpText, checkInpDataForHeatTransfer } from './inpParse.tsx';
 import { getStatusText } from './statusExplain.jsx';
@@ -44,6 +45,7 @@ let App = () => {
   const [stepIncrement, setStepIncrement] = useState(0.1);
   const [steps, setSteps] = useState(100);
   const [elementsCount, setElementsCount] = useState(0);
+  const [expressionHelpStatus, setExpressionHelpStatus] = useState(false);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -82,6 +84,10 @@ let App = () => {
 
   }, [Mesh, gridVisible, blocksVisibility, nodesTemperature]);
 
+
+  const OnExpressionHelp = () => {
+    setExpressionHelpStatus(!expressionHelpStatus)
+  }
 
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
 
@@ -251,7 +257,7 @@ let App = () => {
               setTransitiveProgress(progress.toFixed(2))
             }
             else if (event.data.action == "error") {
-              let error = event.data;
+              let error = event.data.result;
               console.error(error);
               setErrorPopup({ title: "Error computing", text: error.message });
               dispatch(setcomputingStatus({ status: "ready" }))
@@ -399,10 +405,10 @@ let App = () => {
               <label>{boundary.name}:</label>
             </div>
             <div className="col">
-              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type='number' className={'form-control ' + style.inputMinSize}></input>
+              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={ state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
             </div>
             <div className="col">
-              &deg;C
+              &deg;C   {state_type == "steady" ? "" : <i onClick={OnExpressionHelp} title='You can use math expression with t variable' className={'bi bi-question-circle ' + style.helpCursor}></i>}
             </div>
           </div>
         </div>
@@ -475,11 +481,12 @@ let App = () => {
   const upload_component = upload_status ? <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
   const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
-
+  const expression_help_component = expressionHelpStatus ? <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent> : <></>
 
   return (
     <div className="container-lg mt-3">
       <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>
+      {expression_help_component}
       {hint_component}
       {upload_component}
       {load_from_library_component}
