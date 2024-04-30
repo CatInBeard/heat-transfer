@@ -21,6 +21,7 @@ import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/redu
 import { computeSteadyState } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
+import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -46,6 +47,8 @@ let App = () => {
   const [steps, setSteps] = useState(100);
   const [elementsCount, setElementsCount] = useState(0);
   const [expressionHelpStatus, setExpressionHelpStatus] = useState(false);
+  const [useCSVTable, setUseCSVTable] = useState(false);
+  const [uploadCSVTableBCName, setuploadCSVTableBCName] = useState(false);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -87,6 +90,36 @@ let App = () => {
 
   const OnExpressionHelp = () => {
     setExpressionHelpStatus(!expressionHelpStatus)
+  }
+
+  const openCSVUpload = (event) => {
+    let bcName = event.target.getAttribute('data-bc-name');
+    setuploadCSVTableBCName(bcName)
+  }
+
+  const closeCsvUpload = () => {
+    setuploadCSVTableBCName(null)
+  }
+
+  const uploadCSV = (file) => {
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        var text = e.target.result;
+        dispatch(setBCTemperature({ event: text, bcName: uploadCSVTableBCName }))
+      }
+      catch (error) {
+        console.error(error);
+        setErrorPopup({ title: "Error parsing *.csv file", text: error.message });
+      }
+
+    
+      closeCsvUpload()
+    };
+    reader.readAsText(file);
+
+    
   }
 
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
@@ -177,6 +210,10 @@ let App = () => {
 
 
     dispatch(setHeatStateType({ type: event.target.checked === true ? "transitive" : "steady" }))
+  }
+
+  const changeUseCsvTable = (event) => {
+    setUseCSVTable(event.target.checked === true);
   }
 
   const confirmChooseFromLibrary = async (filePath) => {
@@ -306,6 +343,21 @@ let App = () => {
       </div>
     </div>
 
+  const transitiveTableSwitcher = state_type == "steady" ? <></> :
+    <div className="row">
+      <div className="col">
+        Const/Formula
+      </div>
+      <div className="col">
+        <div className="form-check form-switch">
+          <input className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
+        </div>
+      </div>
+      <div className="col">
+        CSV table
+      </div>
+    </div>
+
   let gridSettingsButton = !canChangeGridVisibility ? <></> : (gridVisible ?
     <div className='p-2'>
       <button onClick={toggleGrid} className='btn btn-secondary'>Hide mesh</button>
@@ -399,19 +451,36 @@ let App = () => {
     <>
       {temperature_BC.map((boundary) => {
 
-        return <div className='p-2 form-group' key={boundary.name}>
-          <div className="row">
-            <div className='col'>
-              <label>{boundary.name}:</label>
-            </div>
-            <div className="col">
-              <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={ state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
-            </div>
-            <div className="col">
-              &deg;C   {state_type == "steady" ? "" : <i onClick={OnExpressionHelp} title='You can use math expression with t variable' className={'bi bi-question-circle ' + style.helpCursor}></i>}
+        if (useCSVTable) {
+          return <div className='p-2 form-group' key={boundary.name}>
+            <div className="row">
+              <div className='col'>
+                <label>{boundary.name}:</label>
+              </div>
+              <div className="col">
+                <textarea data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className="form-control" rows={2}></textarea>
+              </div>
+              <div className="col">
+                <i onClick={openCSVUpload} data-bc-name={boundary.name} title='Upload CSV' className={'bi bi-upload ' + style.clickCursor}></i>
+              </div>
             </div>
           </div>
-        </div>
+        }
+        else {
+          return <div className='p-2 form-group' key={boundary.name}>
+            <div className="row">
+              <div className='col'>
+                <label>{boundary.name}:</label>
+              </div>
+              <div className="col">
+                <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
+              </div>
+              <div className="col">
+                &deg;C   {state_type == "steady" ? "" : <i onClick={OnExpressionHelp} title='You can use math expression with t variable' className={'bi bi-question-circle ' + style.helpCursor}></i>}
+              </div>
+            </div>
+          </div>
+        }
 
       })}
     </>
@@ -428,7 +497,7 @@ let App = () => {
 
   const transitiveSettings = state_type == "steady" ? <></> :
     <>
-    <div className='p-2 form-group' key="transitiveSettings">
+      <div className='p-2 form-group' key="transitiveSettings">
         <div className="row">
           <div className='col'>
             <label>Transitive settings:</label>
@@ -458,7 +527,7 @@ let App = () => {
             <input value={stepIncrement} min={0.000000000001} onChange={onStepIncrementChange} type='number' className={'form-control ' + style.inputMinSize}></input>
           </div>
           <div className="col">
-            
+
           </div>
         </div>
       </div>
@@ -471,7 +540,7 @@ let App = () => {
             <input value={steps} min={1} onChange={onStepsChange} type='number' className={'form-control ' + style.inputMinSize}></input>
           </div>
           <div className="col">
-            
+
           </div>
         </div>
       </div>
@@ -482,11 +551,13 @@ let App = () => {
   const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
   const expression_help_component = expressionHelpStatus ? <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent> : <></>
+  const uploadCSV_component = uploadCSVTableBCName ? <UploadCsvComponent confirmAction={uploadCSV} cancelAction={closeCsvUpload} /> : <></>
 
   return (
     <div className="container-lg mt-3">
       <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>
       {expression_help_component}
+      {uploadCSV_component}
       {hint_component}
       {upload_component}
       {load_from_library_component}
@@ -535,6 +606,7 @@ let App = () => {
             <button disabled={!canStartComputing} onClick={startComputing} className='btn btn-lg btn-primary'>Start</button>
           </div>
           {gridSettingsButton}
+          {transitiveTableSwitcher}
         </div>
 
       </div>
