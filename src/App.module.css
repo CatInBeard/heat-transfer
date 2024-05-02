@@ -14,3 +14,6 @@
 .clickCursor {
     cursor: pointer;
 }
+.forbiddenCursor{
+    cursor: not-allowed;
+}

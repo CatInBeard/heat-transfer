@@ -19,7 +19,7 @@ import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
 import { computeSteadyState } from './computeHeatTransfer.tsx';
-import { drawMesh, drawTemperatureMap } from './draw.tsx';
+import { drawMesh, drawTemperatureMap, findMinMax } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 
@@ -49,6 +49,16 @@ let App = () => {
   const [expressionHelpStatus, setExpressionHelpStatus] = useState(false);
   const [useCSVTable, setUseCSVTable] = useState(false);
   const [uploadCSVTableBCName, setuploadCSVTableBCName] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [playerFrame, setPlayerFrame] = useState(0);
+  const [playerInterval, setPlayerInterval] = useState(0);
+
+  const [minT, setMinT] = useState(0);
+  const [maxT, setMaxT] = useState(0);
+  
+
+  const [MaxFrames, setMaxFrames] = useState(0);
+  const [preDrawFrames, setPreDrawFrames] = useState([])
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -73,7 +83,12 @@ let App = () => {
 
       if (Mesh && nodesTemperature) {
         const div = canvasDiv.current;
-        drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current, div)
+        
+        if(preDrawFrames.length === 0){
+          drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current, div)
+        } else {
+          drawTemperatureMap(Mesh, preDrawFrames[playerFrame], inpData, blocksVisibility, canvasRef.current, div, minT, maxT)
+        }
       }
 
       if (Mesh && gridVisible) {
@@ -85,7 +100,7 @@ let App = () => {
     }
 
 
-  }, [Mesh, gridVisible, blocksVisibility, nodesTemperature]);
+  }, [Mesh, gridVisible, blocksVisibility, nodesTemperature, preDrawFrames, playerFrame]);
 
 
   const OnExpressionHelp = () => {
@@ -122,6 +137,40 @@ let App = () => {
     
   }
 
+  const togglePlaying = () => {
+    if(computingStatus == "computed"){
+      setIsPlaying(!isPlaying)
+      if(isPlaying){
+
+        let i = 0;
+        const intervalId = setInterval(() => {
+          
+          setPlayerFrame(i);
+          i++;
+
+          if (i >= MaxFrames) {
+            clearInterval(intervalId);
+            setIsPlaying(true)
+          }
+        }, 1000);
+
+      }
+    }
+  }
+
+  const onNextFrameClick = () => {
+    if(playerFrame + 2 > MaxFrames || computingStatus != "computed"){
+      return
+    }
+    setPlayerFrame(playerFrame + 1)
+  }
+  const onPrevFrameClick = () => {
+    if(playerFrame - 1 < 0 || computingStatus != "computed"){
+      return
+    }
+    setPlayerFrame(playerFrame - 1)
+  }
+
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
 
   const statusData = inpData ?
@@ -142,6 +191,19 @@ let App = () => {
         </div>
       </div>
     </div> : <></>;
+
+    const transitivePlayer = state_type == "transitive" ?
+    <div className='p-2 d-flex flex-row col-9'>
+        <div className='fs-3 text-center m-2'>
+          <i onClick={onPrevFrameClick} className={"bi bi-skip-start" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)  }></i>
+          <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "play" : "pause" )+ (computingStatus == "computed" ? "-fill" : "") + " " +  (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+          <i onClick={onNextFrameClick} className={"bi bi-skip-end" + (computingStatus == "computed" ? "-fill" : "") + " "   + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+        </div>
+        <div className="fs-3 m-2">
+          frame: {playerFrame} {MaxFrames > 0 ?  "/ " + (MaxFrames-1) : "" }
+        </div>
+    </div>
+    : <></>
 
   const onBlockConductivityChange = (event) => {
     const sectionName = event.target.getAttribute('data-section-name');
@@ -184,6 +246,7 @@ let App = () => {
   }
 
   const confirmUpload = (file) => {
+    setPreDrawFrames([]);
     dispatch(setcomputingStatus({ status: "loading" }))
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -218,6 +281,7 @@ let App = () => {
 
   const confirmChooseFromLibrary = async (filePath) => {
     dispatch(toggleShowLoadFromLibrary());
+    setPreDrawFrames([]);
     dispatch(setcomputingStatus({ status: "loading" }))
 
     const getFile = async (filePath) => {
@@ -261,6 +325,7 @@ let App = () => {
 
   const startComputing = () => {
     dispatch(setcomputingStatus({ status: "computing" }))
+    setPreDrawFrames([]);
 
     setTimeout(() => {
       try {
@@ -271,6 +336,11 @@ let App = () => {
         if (state_type == "transitive") {
 
           setTransitiveProgress(0)
+          setPlayerFrame(0)
+
+          let counter = 0;
+          setMaxFrames(0);
+          setPreDrawFrames([])
 
           const transitiveWorker = new Worker(new URL('./computeTransitiveWorker.js', import.meta.url));
 
@@ -282,6 +352,15 @@ let App = () => {
               temperatures = temperatureFrames[temperatureFrames.length - 1];
               const end = performance.now();
               console.log("Solved in " + (end - start).toString() + " milliseconds.");
+
+              setMaxFrames(temperatureFrames.length)
+              setPreDrawFrames(temperatureFrames)
+
+              let {min, max} = findMinMax(temperatureFrames)
+
+              setMinT(min)
+              setMaxT(max)
+
               dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
               dispatch(setcomputingStatus({ status: "computed" }))
               transitiveWorker.terminate();
@@ -289,6 +368,8 @@ let App = () => {
             }
             else if (event.data.action == "progress") {
               let progress = event.data.result;
+              counter++
+              setPlayerFrame(counter)
               dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
               console.log("progress:" + progress.toFixed(2) + "%")
               setTransitiveProgress(progress.toFixed(2))
@@ -565,6 +646,7 @@ let App = () => {
       <div ref={canvasDiv} className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
       </div>
+      {transitivePlayer}
       <div className='d-flex align-items-baseline'>
         <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>

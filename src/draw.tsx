@@ -56,7 +56,7 @@ const drawMesh = (Mesh: Mesh, canvas) => {
     })
 }
 
-const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, canvas, divElement) => {
+const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, canvas, divElement, minTExt = null, maxTExt = null) => {
 
 
     const ctx = canvas.getContext('2d');
@@ -94,8 +94,8 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
         return visibleElementsNumbers.includes(element[0]);
     })
 
-    let minT = nodesTemperatures.reduce((min: number, current: number) => current < min ? current : min, nodesTemperatures[0])
-    let maxT = nodesTemperatures.reduce((max: number, current: number) => current > max ? current : max, nodesTemperatures[0])
+    let minT = minTExt ? minTExt : nodesTemperatures.reduce((min: number, current: number) => current < min ? current : min, nodesTemperatures[0])
+    let maxT = maxTExt ? maxTExt : nodesTemperatures.reduce((max: number, current: number) => current > max ? current : max, nodesTemperatures[0])
 
     elements.forEach(element => {
         let drawNodes: number[][] = []
@@ -249,4 +249,23 @@ const temperatureToColor = (T: number, minTemp: number = 0, maxTemp: number = 10
 }
 
 
-export { drawMesh, drawTemperatureMap }  
+function findMinMax(arr: number[][]) {
+  let min = arr[0][0];
+  let max = arr[0][0];
+
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = 0; j < arr[i].length; j++) {
+      if (arr[i][j] < min) {
+        min = arr[i][j];
+      } else if (arr[i][j] > max) {
+        max = arr[i][j];
+      }
+    }
+  }
+
+  return { min, max };
+}
+
+
+
+export { drawMesh, drawTemperatureMap, findMinMax}  
