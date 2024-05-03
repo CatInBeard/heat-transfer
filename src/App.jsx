@@ -22,6 +22,7 @@ import { computeSteadyState } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap, findMinMax } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
+import computeTransitiveWorker from "./computeTransitiveWorker.js"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -341,15 +342,11 @@ let App = () => {
           let counter = 0;
           setMaxFrames(0);
           setPreDrawFrames([])
-
-          const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.js", import.meta.url));
           
 
-          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps });
-
-          transitiveWorker.onmessage = function (event) {
-            if (event.data.action == "done") {
-              let temperatureFrames = event.data.result;
+          const onmessage = (data) => {
+            if (data.action == "done") {
+              let temperatureFrames = data.result;
               temperatures = temperatureFrames[temperatureFrames.length - 1];
               const end = performance.now();
               console.log("Solved in " + (end - start).toString() + " milliseconds.");
@@ -364,25 +361,31 @@ let App = () => {
 
               dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
               dispatch(setcomputingStatus({ status: "computed" }))
-              transitiveWorker.terminate();
 
             }
-            else if (event.data.action == "progress") {
-              let progress = event.data.result;
+            else if (data.action == "progress") {
+              let progress = data.result;
               counter++
               setPlayerFrame(counter)
-              dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
+              dispatch(setNodesTemperature({ nodesTemperature: data.temp }));
               console.log("progress:" + progress.toFixed(2) + "%")
               setTransitiveProgress(progress.toFixed(2))
             }
-            else if (event.data.action == "error") {
-              let error = event.data.result;
+            else if (data.action == "error") {
+              let error = data.result;
               console.error(error);
               setErrorPopup({ title: "Error computing", text: error.message });
               dispatch(setcomputingStatus({ status: "ready" }))
-              transitiveWorker.terminate();
             }
           };
+
+          const computeTranitive = async (data, cb) =>{
+            computeTransitiveWorker(data, cb)
+          }
+
+          computeTranitive({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps }, onmessage)
+
+          
 
 
           return;
