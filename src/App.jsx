@@ -342,7 +342,8 @@ let App = () => {
           setMaxFrames(0);
           setPreDrawFrames([])
 
-          const transitiveWorker = new Worker(new URL('./computeTransitiveWorker.js', import.meta.url));
+          const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.js", import.meta.url));
+          
 
           transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps });
 

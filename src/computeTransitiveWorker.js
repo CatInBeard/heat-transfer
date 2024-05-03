@@ -1,6 +1,7 @@
-import {computeTransitive} from "./computeHeatTransfer.tsx"
+import { computeTransitive } from "./computeHeatTransfer.tsx"
 
-onmessage = function(event) {
+
+onmessage = function (event) {
 
     let inpData = event.data.inpData
     let temperature_BC = event.data.temperature_BC
@@ -10,17 +11,17 @@ onmessage = function(event) {
     let initialTemp = event.data.initialTemp
     let stepIncrement = event.data.stepIncrement
     let steps = event.data.steps
-    
-    try{
-        var result = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, callback, initialTemp,stepIncrement, steps);
+
+    try {
+        var result = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, callback, initialTemp, stepIncrement, steps);
     }
-    catch(e){
-        postMessage({ action: "error", result: e});    
+    catch (e) {
+        postMessage({ action: "error", result: e });
     }
-    postMessage({ action: "done", result: result});
+    postMessage({ action: "done", result: result });
 };
 
 
 const callback = (progress, data) => {
-    postMessage({action: "progress", result: progress, temp: data});
+    postMessage({ action: "progress", result: progress, temp: data });
 }
