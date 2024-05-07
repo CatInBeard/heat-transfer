@@ -114,7 +114,93 @@ const multiplyVectorByNumber = (matrix: number[], number: number): number[] => {
     return result;
 }
 
-const InverseMatrix = (A: number[][]) => { // LU inverse matrix
+function InverseMatrix(matrix: number[][]): number[][] {
+    if (!isSquareMatrix(matrix)) {
+      throw new Error("Matrix must be square");
+    }
+  
+    const det = calculateDeterminant(matrix);
+  
+    if (det === 0) {
+        throw new Error("Matrix has 0 det");
+    }
+  
+    const cofactors = calculateCofactors(matrix);
+    const adjoint = transposeMatrix(cofactors);
+  
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < matrix[i].length; j++) {
+        adjoint[i][j] /= det;
+      }
+    }
+
+    return adjoint;
+
+  
+    function isSquareMatrix(matrix: number[][]): boolean {
+      const n = matrix.length;
+      for (let i = 0; i < n; i++) {
+        if (matrix[i].length !== n) {
+          return false;
+        }
+      }
+      return true;
+    }
+  
+    function calculateDeterminant(matrix: number[][]): number {
+      if (matrix.length === 1) {
+        return matrix[0][0];
+      }
+  
+      let det = 0;
+      for (let i = 0; i < matrix.length; i++) {
+        det +=
+          matrix[0][i] *
+          calculateDeterminant(
+            getSubmatrix(matrix, 0, i)
+          ) *
+          ((-1) ** i);
+      }
+      return det;
+    }
+  
+    function calculateCofactors(matrix: number[][]): number[][] {
+      const cofactors: number[][] = [];
+      for (let i = 0; i < matrix.length; i++) {
+        cofactors[i] = [];
+        for (let j = 0; j < matrix[i].length; j++) {
+          cofactors[i][j] =
+            ((-1) ** (i + j)) *
+            calculateDeterminant(getSubmatrix(matrix, i, j));
+        }
+      }
+      return cofactors;
+    }
+  
+    function getSubmatrix(matrix: number[][], row: number, col: number): number[][] {
+      const submatrix: number[][] = [];
+      for (let i = 0; i < matrix.length; i++) {
+        if (i === row) continue;
+        submatrix.push(matrix[i].filter((_, c) => c != col));
+      }
+      return submatrix;
+    }
+  
+    function transposeMatrix(matrix: number[][]): number[][] {
+      const transposed: number[][] = [];
+      for (let i = 0; i < matrix[0].length; i++) {
+        transposed[i] = [];
+        for (let j = 0; j < matrix.length; j++) {
+          transposed[i][j] = matrix[j][i];
+        }
+      }
+      return transposed;
+    }
+  }
+  
+
+
+const InverseMatrixLU = (A: number[][]) => { // LU inverse matrix
     if (A.length != A[0].length) {
         throw new Error("The matrix is not square");
     }
@@ -260,9 +346,9 @@ const frobeniusNorm = (matrix: number[][]): number => {
         }
     }
     
-    return Math.sqrt(sum);
+    return Math.sqrt(sum); 
 }
 
 
 
-export { transposeMatrix, SumMatrix, MultiplyMatrixByVector, multiplyVectorByNumber, SumVector, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant, frobeniusNorm }
+export { transposeMatrix, SumMatrix, MultiplyMatrixByVector, multiplyVectorByNumber, SumVector, MultiplyMatrix, InverseMatrix, multiplyMatrixByNumber, solveLinearEquationSystem, Determinant, frobeniusNorm, InverseMatrixLU }

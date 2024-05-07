@@ -153,8 +153,12 @@ let App = () => {
             clearInterval(intervalId);
             setIsPlaying(true)
           }
-        }, 1000);
+        }, 100);
+        setPlayerInterval(intervalId)
 
+      }
+      else{
+        clearInterval(playerInterval)
       }
     }
   }

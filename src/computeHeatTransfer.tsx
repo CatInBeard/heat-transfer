@@ -1,7 +1,8 @@
-import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, SumMatrix, frobeniusNorm } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, InverseMatrixLU } from "./matrix.tsx";
 import { Nset, Lset, Section, TemperatureBC, TemperatureBCTransitive } from "./inpParse"
 import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix.ts"
 import { evaluateMathExpression } from "./mathExpression.ts"
+import { cloneDeep } from 'lodash';
 import Big from 'big.js';
 
 
@@ -16,12 +17,16 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     let C: number[][] = getCapacityMatrix(inpData, blocks_density, blocks_capacity);
 
 
+    let invC = InverseMatrixLU(C);
+
     let KForF = applyTemperatureBCToKTransitive(K, inpData);
 
 
     let F: number[] = getFForTransitive(KForF, inpData);
 
-    K = applyTemperatureBCToKTransitiveStep2(KForF, inpData);
+    K = cloneDeep(KForF)
+
+    K = applyTemperatureBCToKTransitiveStep2(K, inpData);
 
 
     if (progress_callback === null) {
@@ -80,18 +85,16 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
         for (let t = 0; t < steps; t++) {
 
             F = getFForTransitive(KForF, inpData, realTime);
-            
 
-            let A = multiplyMatrixByNumber(C, freq)
-            let b = SumVector(
-                SumVector(F, multiplyVectorByNumber(
-                    MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
-                multiplyVectorByNumber(
-                    MultiplyMatrixByVector(C, temperaturePrevStep), freq))
-
-            let Temperature = solveLinearEquationSystem(A, b)
+            let Temperature = SumVector(
+                SumVector(temperaturePrevStep , multiplyVectorByNumber(
+                    MultiplyMatrixByVector(
+                        MultiplyMatrix(invC, K), temperaturePrevStep) , - 1 *timeStep) ), 
+                        multiplyVectorByNumber(MultiplyMatrixByVector(invC, F), timeStep))
 
             temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
+
+            temperatureCurrentStep = Temperature
 
             temperatureFrames.push(temperatureCurrentStep);
             temperaturePrevStep = temperatureCurrentStep;
@@ -262,6 +265,22 @@ const getFForTransitive = (K: Array<Array<number>>, inpData, t: number = 0): num
         F.push(0);
     }
 
+    inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBCTransitive) => {
+        let setName = temperature.setName
+        let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
+            return nset.setname == setName;
+        });
+        if (!nset) {
+            throw new Error("Nset not found");
+        }
+
+
+        let temp = evaluateMathExpression(temperature.temperature.toString(), t);
+
+        nset.nodes.forEach((node) => {
+            F[node - 1] = K[node - 1][node - 1] * temp;
+        })
+    });
 
     inpData.steps[0].boundaries.temperature.forEach((temperature: TemperatureBCTransitive) => {
         let setName = temperature.setName
@@ -272,12 +291,10 @@ const getFForTransitive = (K: Array<Array<number>>, inpData, t: number = 0): num
             throw new Error("Nset not found");
         }
 
-        console.log(temperature.temperature)
 
         let temp = evaluateMathExpression(temperature.temperature.toString(), t);
 
         nset.nodes.forEach((node) => {
-            F[node - 1] = K[node - 1][node - 1] * temp;
             for (let i = 0; i < F.length; i++) {
                 if (i != node - 1) {
                     F[i] -= K[i][node - 1] * temp;
@@ -377,27 +394,36 @@ const getConductivityMatrixTransitive = (inpData, blocks_termal_conductivity) =>
         let Yk = nodes[elements[i][3] - 1][2];
 
 
-        let Bi: number = Yj - Yk;
-        let Bj: number = Yk - Yi;
-        let Bk: number = Yi - Yj;
-        let Ci: number = Xk - Xj;
-        let Cj: number = Xi - Xk;
-        let Ck: number = Xj - Xi;
+        let matrix: number[][] = [[1, Xi, Yi], [1, Xj, Yj], [1, Xk, Yk]]
+        let invMatrix: number[][] = InverseMatrix(matrix)
+        invMatrix.shift()
 
         let Square = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
 
-        let B: number[][] = [[Bi, Bj, Bk], [Ci, Cj, Ck]];
+        let K_local = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(invMatrix), conductivityMatrix), invMatrix),Square)
 
-        let Ki = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(B), conductivityMatrix), B), 1 / 4 * Square)
 
-        K = accumulateToGlobalMatrix(K, Ki, elements[i][1], elements[i][2], elements[i][3]);
+        K = accumulateToGlobalMatrix(K, K_local, elements[i][1], elements[i][2], elements[i][3]);
 
     }
+
 
     return K;
 
 }
 
+function hasAnyNan(array) {
+    for (let i = 0; i < array.length; i++) {
+      for (let j = 0; j < array[i].length; j++) {
+        if (isNaN(array[i][j])) {
+          return true;
+        }
+      }
+    }
+  
+    return false;
+  }
+  
 
 const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array<number>> => {
 
