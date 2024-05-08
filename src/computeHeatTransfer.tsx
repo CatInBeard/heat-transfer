@@ -16,9 +16,6 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
     let C: number[][] = getCapacityMatrix(inpData, blocks_density, blocks_capacity);
 
-
-    let invC = InverseMatrixLU(C);
-
     let KForF = applyTemperatureBCToKTransitive(K, inpData);
 
 
@@ -86,11 +83,13 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
             F = getFForTransitive(KForF, inpData, realTime);
 
-            let Temperature = SumVector(
-                SumVector(temperaturePrevStep , multiplyVectorByNumber(
-                    MultiplyMatrixByVector(
-                        MultiplyMatrix(invC, K), temperaturePrevStep) , - 1 *timeStep) ), 
-                        multiplyVectorByNumber(MultiplyMatrixByVector(invC, F), timeStep))
+            let A = multiplyMatrixByNumber(C, freq)
+            let b = SumVector(
+                SumVector(F, multiplyVectorByNumber(
+                    MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
+                multiplyVectorByNumber(
+                    MultiplyMatrixByVector(C, temperaturePrevStep), freq))
+            let Temperature = solveLinearEquationSystem(A, b)
 
             temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
 
