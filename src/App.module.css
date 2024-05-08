@@ -17,3 +17,6 @@
 .forbiddenCursor{
     cursor: not-allowed;
 }
+.BCTextarea {
+    min-width: 9ch;
+}

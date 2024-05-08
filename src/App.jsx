@@ -22,6 +22,7 @@ import { computeSteadyState } from './computeHeatTransfer.tsx';
 import { drawMesh, drawTemperatureMap, findMinMax } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
+import InsertCsvTableComponent from "./components/insertCsvTableComponent.jsx"
 import computeTransitiveWorker from "./computeTransitiveWorker.js"
 
 let App = () => {
@@ -50,13 +51,14 @@ let App = () => {
   const [expressionHelpStatus, setExpressionHelpStatus] = useState(false);
   const [useCSVTable, setUseCSVTable] = useState(false);
   const [uploadCSVTableBCName, setuploadCSVTableBCName] = useState(false);
+  const [csvTableInsertBCName, setCsvTableInsertBCName] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [playerFrame, setPlayerFrame] = useState(0);
   const [playerInterval, setPlayerInterval] = useState(0);
 
   const [minT, setMinT] = useState(0);
   const [maxT, setMaxT] = useState(0);
-  
+
 
   const [MaxFrames, setMaxFrames] = useState(0);
   const [preDrawFrames, setPreDrawFrames] = useState([])
@@ -84,8 +86,8 @@ let App = () => {
 
       if (Mesh && nodesTemperature) {
         const div = canvasDiv.current;
-        
-        if(preDrawFrames.length === 0){
+
+        if (preDrawFrames.length === 0) {
           drawTemperatureMap(Mesh, nodesTemperature, inpData, blocksVisibility, canvasRef.current, div)
         } else {
           drawTemperatureMap(Mesh, preDrawFrames[playerFrame], inpData, blocksVisibility, canvasRef.current, div, minT, maxT)
@@ -113,8 +115,17 @@ let App = () => {
     setuploadCSVTableBCName(bcName)
   }
 
+  const openCsvTableInsert = (event) => {
+    let bcName = event.target.getAttribute('data-bc-name');
+    setCsvTableInsertBCName(bcName)
+  }
+
   const closeCsvUpload = () => {
     setuploadCSVTableBCName(null)
+  }
+
+  const closeCsvTableInsert = () => {
+    setCsvTableInsertBCName(null)
   }
 
   const uploadCSV = (file) => {
@@ -130,22 +141,57 @@ let App = () => {
         setErrorPopup({ title: "Error parsing *.csv file", text: error.message });
       }
 
-    
+
       closeCsvUpload()
     };
     reader.readAsText(file);
 
-    
+
+  }
+
+  const insertTable = (data) => {
+    let text = data.map((row) => {
+      return row.join(", ")
+    }).filter((line) => line !== "" && line !== ", ").join("\n");
+    dispatch(setBCTemperature({ event: text, bcName: csvTableInsertBCName }))
+    closeCsvTableInsert()
+  }
+
+  const tryCsvTextToArray = (text) => {
+    const defaultValue = ["",""];
+    try {
+      const rows = text.split('\n');
+      if (rows.length === 0) {
+        return defaultValue;
+      }
+      const data = rows.map(row => {
+        const columns = row.split(',').map( (col) => parseFloat(col));
+        if (columns.length !== 2) {
+          return defaultValue;
+        }
+        return columns;
+      });
+      data.push(["",""])
+      return data;
+    } catch (error) {
+      console.warn(error)
+      return defaultValue;
+    }
+  }
+
+  const getBCInitialData = () => {
+    let BCText = temperature_BC.find((BC) => BC.name == csvTableInsertBCName).temperature
+    return tryCsvTextToArray(BCText)
   }
 
   const togglePlaying = () => {
-    if(computingStatus == "computed"){
+    if (computingStatus == "computed") {
       setIsPlaying(!isPlaying)
-      if(isPlaying){
+      if (isPlaying) {
 
         let i = 0;
         const intervalId = setInterval(() => {
-          
+
           setPlayerFrame(i);
           i++;
 
@@ -157,20 +203,20 @@ let App = () => {
         setPlayerInterval(intervalId)
 
       }
-      else{
+      else {
         clearInterval(playerInterval)
       }
     }
   }
 
   const onNextFrameClick = () => {
-    if(playerFrame + 2 > MaxFrames || computingStatus != "computed"){
+    if (playerFrame + 2 > MaxFrames || computingStatus != "computed") {
       return
     }
     setPlayerFrame(playerFrame + 1)
   }
   const onPrevFrameClick = () => {
-    if(playerFrame - 1 < 0 || computingStatus != "computed"){
+    if (playerFrame - 1 < 0 || computingStatus != "computed") {
       return
     }
     setPlayerFrame(playerFrame - 1)
@@ -197,16 +243,16 @@ let App = () => {
       </div>
     </div> : <></>;
 
-    const transitivePlayer = state_type == "transitive" ?
+  const transitivePlayer = state_type == "transitive" ?
     <div className='p-2 d-flex flex-row col-9'>
-        <div className='fs-3 text-center m-2'>
-          <i onClick={onPrevFrameClick} className={"bi bi-skip-start" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)  }></i>
-          <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "play" : "pause" )+ (computingStatus == "computed" ? "-fill" : "") + " " +  (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-          <i onClick={onNextFrameClick} className={"bi bi-skip-end" + (computingStatus == "computed" ? "-fill" : "") + " "   + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-        </div>
-        <div className="fs-3 m-2">
-          frame: {playerFrame} {MaxFrames > 0 ?  "/ " + (MaxFrames-1) : "" }
-        </div>
+      <div className='fs-3 text-center m-2'>
+        <i onClick={onPrevFrameClick} className={"bi bi-skip-start" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+        <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "play" : "pause") + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+        <i onClick={onNextFrameClick} className={"bi bi-skip-end" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+      </div>
+      <div className="fs-3 m-2">
+        frame: {playerFrame} {MaxFrames > 0 ? "/ " + (MaxFrames - 1) : ""}
+      </div>
     </div>
     : <></>
 
@@ -346,7 +392,7 @@ let App = () => {
           let counter = 0;
           setMaxFrames(0);
           setPreDrawFrames([])
-          
+
 
           const onmessage = (data) => {
             if (data.action == "done") {
@@ -358,7 +404,7 @@ let App = () => {
               setMaxFrames(temperatureFrames.length)
               setPreDrawFrames(temperatureFrames)
 
-              let {min, max} = findMinMax(temperatureFrames)
+              let { min, max } = findMinMax(temperatureFrames)
 
               setMinT(min)
               setMaxT(max)
@@ -383,13 +429,13 @@ let App = () => {
             }
           };
 
-          const computeTranitive = async (data, cb) =>{
+          const computeTranitive = async (data, cb) => {
             computeTransitiveWorker(data, cb)
           }
 
           computeTranitive({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps }, onmessage)
 
-          
+
 
 
           return;
@@ -547,10 +593,10 @@ let App = () => {
                 <label>{boundary.name}:</label>
               </div>
               <div className="col">
-                <textarea data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className="form-control" rows={2}></textarea>
+                <textarea data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className={"form-control " + style.BCTextarea} rows={2}></textarea>
               </div>
               <div className="col">
-                <i onClick={openCSVUpload} data-bc-name={boundary.name} title='Upload CSV' className={'bi bi-upload ' + style.clickCursor}></i>
+                <i onClick={openCSVUpload} data-bc-name={boundary.name} title='Upload CSV' className={'bi bi-upload ' + style.clickCursor}></i> <i onClick={openCsvTableInsert} data-bc-name={boundary.name} title='Insert table manually' className={'bi bi-table ' + style.clickCursor}></i>
               </div>
             </div>
           </div>
@@ -641,12 +687,14 @@ let App = () => {
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
   const expression_help_component = expressionHelpStatus ? <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent> : <></>
   const uploadCSV_component = uploadCSVTableBCName ? <UploadCsvComponent confirmAction={uploadCSV} cancelAction={closeCsvUpload} /> : <></>
+  const insertCSVTable_component = csvTableInsertBCName ? <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} /> : <></>
 
   return (
     <div className="container-lg mt-3">
       <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>
       {expression_help_component}
       {uploadCSV_component}
+      {insertCSVTable_component}
       {hint_component}
       {upload_component}
       {load_from_library_component}
