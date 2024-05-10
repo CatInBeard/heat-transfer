@@ -4,7 +4,7 @@
 # Triggering by main push
 
 
-echo "heat-transfer" >> package.json
+echo '"homepage":"heat-transfer"' >> package.json
 
 mkdir -p public_html
 docker run --rm  -v $PWD:/usr/src/app -w /usr/src/app node:18-alpine npm install
