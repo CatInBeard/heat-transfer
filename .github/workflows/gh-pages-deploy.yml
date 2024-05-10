@@ -14,7 +14,8 @@ jobs:
         uses: actions/checkout@v2
       
       - name: Set homepage
-        run: echo "\"homepage\": \"https://${{ secrets.GITHUB_ACTOR }}.github.io/${{ github.repository }}\"" > package.json
+        run: sed -i "s/\"homepage\": \"\"/\"homepage\": \"https://${{ secrets.GITHUB_ACTOR }}.github.io/${{ github.repository }}\"/" package.json
+
 
       - name: build
         run: sh deploy.sh
