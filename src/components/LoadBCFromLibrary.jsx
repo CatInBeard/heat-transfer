@@ -1,16 +1,13 @@
 import ClosablePopupContainer from "./closablePopup/ClosablePopup";
 
-let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
+let LoadBCFromLibrary = ({ cancelAction, confirmAction }) => {
 
-    const fixturesInpFileNames = [
-        "200-elem.inp",
-        "760-elem.inp",
-        "1720-elem.inp",
-        "6651-elem.inp"
+    const fixturesBCCSVFileNames = [
+        "nevada2023.csv",
     ]
 
     const remoteLib = [
-        // {name: "test", path:"https://raw.githubusercontent.com/CatInBeard/heat-transfer/main/fixtures/inp/13-elem.inp"}
+        // {name: "test", path:"https://raw.githubusercontent.com/CatInBeard/heat-transfer/main/fixtures/bc_csv/nevada2023.csv"}
     ]
 
     const selectFile = (event) => {
@@ -20,9 +17,9 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
 
     }
 
-    let filesChoseList = fixturesInpFileNames.map( (fileName) => {
+    let filesChoseList = fixturesBCCSVFileNames.map( (fileName) => {
         return <div className="p-1">
-        <a href="#" onClick={selectFile} data-file-path={"./fixtures/inp/" + fileName}>{fileName}</a>
+        <a href="#" onClick={selectFile} data-file-path={"./fixtures/bc_csv/" + fileName}>{fileName}</a>
         </div>
     })
    
@@ -33,11 +30,11 @@ let LoadFromLibrary = ({ cancelAction, confirmAction }) => {
     }))
 
     return (
-        <ClosablePopupContainer cancelAction={cancelAction} headerText={"Select *.inp file from library"} >
+        <ClosablePopupContainer cancelAction={cancelAction} headerText={"Select *.csv file from library"} >
             {filesChoseList}
         </ClosablePopupContainer>
     )
 
 }
 
-export default LoadFromLibrary;
+export default LoadBCFromLibrary;

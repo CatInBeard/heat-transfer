@@ -24,6 +24,7 @@ import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 import InsertCsvTableComponent from "./components/insertCsvTableComponent.jsx"
 import computeTransitiveWorker from "./computeTransitiveWorker.js"
+import LoadBCFromLibrary from "./components/LoadBCFromLibrary.jsx"
 
 let App = () => {
   const dispatch = useDispatch();
@@ -42,6 +43,8 @@ let App = () => {
   const nodesTemperature = useSelector((state) => state.canvas.nodesTemperature)
   const show_load_from_library = useSelector((state) => state.values.show_load_from_library)
 
+
+  const [show_load_bc_from_library, set_show_load_bc_from_library] = useState(false)
   const [errorPopup, setErrorPopup] = useState(null);
   const [transitiveProgress, setTransitiveProgress] = useState(0);
   const [initialTemp, setInitialTemp] = useState(0);
@@ -106,6 +109,15 @@ let App = () => {
 
   }, [Mesh, gridVisible, blocksVisibility, nodesTemperature, preDrawFrames, playerFrame]);
 
+
+  const toggle_bc_librabry = () => {
+    if(show_load_bc_from_library == false){
+      set_show_load_bc_from_library(uploadCSVTableBCName);
+    }
+    else{
+      set_show_load_bc_from_library(false);
+    }
+  }
 
   const OnExpressionHelp = () => {
     setExpressionHelpStatus(!expressionHelpStatus)
@@ -371,6 +383,34 @@ let App = () => {
         setErrorPopup({ title: "Error parsing *.inp file", text: error.message });
         dispatch(setcomputingStatus({ status: "waiting" }))
       }
+    }, 100);
+  }
+
+  const confirmChooseBCFromLibrary = async (filePath) => {
+
+    const getFile = async (filePath) => {
+
+      let retData;
+
+      await fetch(filePath)
+        .then(response => response.text())
+        .then(data => {
+          retData = data
+        });
+
+      return retData
+    }
+
+    let text = await getFile(filePath);
+    setTimeout(() => {
+      try {
+        dispatch(setBCTemperature({ event: text, bcName: show_load_bc_from_library }))
+      }
+      catch (error) {
+        console.error(error);
+        setErrorPopup({ title: "Error getting *.csv file", text: error.message });
+      }
+      set_show_load_bc_from_library(false);
     }, 100);
   }
 
@@ -703,9 +743,10 @@ let App = () => {
   const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
   const upload_component = upload_status ? <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
   const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
+  const load_bc_from_library_component = show_load_bc_from_library ? <LoadBCFromLibrary confirmAction={confirmChooseBCFromLibrary} cancelAction={toggle_bc_librabry}></LoadBCFromLibrary> : <></>
   const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
   const expression_help_component = expressionHelpStatus ? <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent> : <></>
-  const uploadCSV_component = uploadCSVTableBCName ? <UploadCsvComponent confirmAction={uploadCSV} cancelAction={closeCsvUpload} /> : <></>
+  const uploadCSV_component = uploadCSVTableBCName ? <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} /> : <></>
   const insertCSVTable_component = csvTableInsertBCName ? <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} /> : <></>
 
   return (
@@ -717,6 +758,7 @@ let App = () => {
       {hint_component}
       {upload_component}
       {load_from_library_component}
+      {load_bc_from_library_component}
       {error_component}
       <div ref={canvasDiv} className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>

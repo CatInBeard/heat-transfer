@@ -7,7 +7,7 @@ This project is a CAE web application for calculating thermal conductivity in a 
 
 ## Demo
 You can try application [here](https://catinbeard.github.io/heat-transfer/).  
-If you need .inp file for testing, you can get it in [fixtures folder](fixtures)
+If you need .inp file for testing, you can get it in [fixtures folder](fixtures/inp/)
 
 
 ## License

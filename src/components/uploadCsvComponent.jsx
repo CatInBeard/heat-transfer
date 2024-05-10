@@ -1,7 +1,7 @@
 import ClosablePopupContainer from "./closablePopup/ClosablePopup";
 import { useState, useEffect, useRef } from "react";
 
-let UploadCsvComponent = ({ cancelAction, confirmAction }) => {
+let UploadCsvComponent = ({ cancelAction, confirmAction, libraryAction }) => {
 
     let fileType = "csv"
 
@@ -34,6 +34,15 @@ let UploadCsvComponent = ({ cancelAction, confirmAction }) => {
         }
     }
 
+    const csvLibraryClick = (event) => {
+        event.preventDefault();
+        libraryAction();
+        cancelAction();
+    }
+
+    let libraryLink = libraryAction ? <div  className="form-group m-2">
+        Or use <a href="#" onClick={csvLibraryClick}>examples library</a>
+    </div> : <></>
 
     return (
         <ClosablePopupContainer cancelAction={cancelAction} headerText={"Upload " + fileType + " file"} focusOnClose={false} >
@@ -44,6 +53,7 @@ let UploadCsvComponent = ({ cancelAction, confirmAction }) => {
                 </label>
                 <input ref={inputRef} accept=".csv" onChange={handleFileChange} name='fileinput' id='fileinput' type='file' className='form-control'></input>
             </div>
+            {libraryLink}
             <div className="form-group mt-2">
                 <button ref={submitRef} className='btn btn-primary' onClick={onUploadClick}>
                     Upload
