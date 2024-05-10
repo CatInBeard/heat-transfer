@@ -13,9 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       
-      - name: Set homepage
-        run: sed -i "s/\"homepage\": \"\"/\"homepage\": \"https://${{ secrets.GITHUB_ACTOR }}.github.io/${{ github.repository }}\"/" package.json
-
 
       - name: build
         run: sh deploy.sh
