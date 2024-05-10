@@ -158,7 +158,7 @@ let App = () => {
   }
 
   const tryCsvTextToArray = (text) => {
-    const defaultValue = ["",""];
+    const defaultValue = [["",""]];
     try {
       const rows = text.split('\n');
       if (rows.length === 0) {
