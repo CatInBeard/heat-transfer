@@ -451,7 +451,7 @@ let App = () => {
           setPlayerFrame(0)
 
           let counter = 0;
-          setMaxFrames(0);
+          setMaxFrames(steps+1);
           setPreDrawFrames([])
 
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
