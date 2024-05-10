@@ -11,15 +11,15 @@ import {
 import HintComponent from './components/HintComponent.jsx';
 import ExpressionHelpComponent from "./components/ExpressionHelpComponent.jsx"
 import UploadComponent from './components/UploadComponent.jsx';
-import { parseInpText, checkInpDataForHeatTransfer } from './inpParse.tsx';
+import { parseInpText, checkInpDataForHeatTransfer } from './inpParse';
 import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
 import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
-import { convertInpDataToMesh } from "./mesh.tsx"
+import { convertInpDataToMesh } from "./mesh"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
-import { computeSteadyState } from './computeHeatTransfer.tsx';
-import { drawMesh, drawTemperatureMap, findMinMax, hilightBC } from './draw.tsx';
+import { computeSteadyState } from './computeHeatTransfer';
+import { drawMesh, drawTemperatureMap, findMinMax, hilightBC } from './draw';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 import InsertCsvTableComponent from "./components/insertCsvTableComponent.jsx"

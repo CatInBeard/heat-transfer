@@ -1,7 +1,7 @@
-import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, InverseMatrixLU } from "./matrix.tsx";
+import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, InverseMatrixLU } from "./matrix";
 import { Nset, Lset, Section, TemperatureBC, TemperatureBCTransitive } from "./inpParse"
-import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix.ts"
-import { evaluateMathExpression } from "./mathExpression.ts"
+import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix"
+import { evaluateMathExpression } from "./mathExpression"
 import { cloneDeep } from 'lodash';
 import Big from 'big.js';
 

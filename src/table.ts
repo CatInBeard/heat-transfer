@@ -1,7 +1,7 @@
 const parseCSV = (csvData: string) => {
 
     const lines = csvData.split("\n");
-    const result = [];
+    const result: number[]= [];
 
     for (let i = 0; i < lines.length; i++) {
         const [time, temperature] = lines[i].split(",");
@@ -12,12 +12,11 @@ const parseCSV = (csvData: string) => {
 }
 
 
-type ValueMap<T> = { [key: string]: T };
 
-function interpolateMap<T>(map: ValueMap<T>, value: number): T {
+function interpolateMap(map: number[], value: number): number {
 
 
-  const sortedKeys = Object.keys(map).sort((a, b) => a - b);
+  const sortedKeys = Object.keys(map).sort((a: any, b: any) => a - b);
   const firstValue = map[sortedKeys[0]];
 
   if(value <= 0 || value <= parseFloat(sortedKeys[0]) ){

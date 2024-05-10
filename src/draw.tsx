@@ -1,5 +1,5 @@
-import { Mesh, findMinMaxCoordinates, MinMax, Point } from "./mesh.tsx"
-import { TemperatureBCTransitive, Nset } from "./inpParse.tsx"
+import { Mesh, findMinMaxCoordinates, MinMax, Point } from "./mesh"
+import { TemperatureBCTransitive, Nset } from "./inpParse"
 
 type Coords = {
     x: number,

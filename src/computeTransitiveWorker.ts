@@ -1,4 +1,4 @@
-import { computeTransitive } from "./computeHeatTransfer.tsx"
+import { computeTransitive } from "./computeHeatTransfer"
 
 
 // eslint-disable-next-line no-restricted-globals

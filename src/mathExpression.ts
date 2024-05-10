@@ -1,4 +1,4 @@
-import {parseCSV, interpolateMap} from "./table.ts"
+import {parseCSV, interpolateMap} from "./table"
 
 
 const evaluateMathExpression = (expression: string, t: number): number => {
