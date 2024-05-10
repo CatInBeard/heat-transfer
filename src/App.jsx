@@ -329,12 +329,13 @@ let App = () => {
 
   const changeProblemState = (event) => {
 
+    const newState = state_type == "transitive" ? "steady" : "transitive";
 
-    dispatch(setHeatStateType({ type: event.target.checked === true ? "transitive" : "steady" }))
+    dispatch(setHeatStateType({ type: newState }))
   }
 
   const changeUseCsvTable = (event) => {
-    setUseCSVTable(event.target.checked === true);
+    setUseCSVTable(!useCSVTable);
   }
 
   const confirmChooseFromLibrary = async (filePath) => {
@@ -478,11 +479,16 @@ let App = () => {
       </div>
       <div className="col">
         <div className="form-check form-switch">
-          <input className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
+          <input checked={state_type != "transitive"} className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
         </div>
       </div>
       <div className="col">
         Transitive
+      </div>
+      <div className="col">
+        <div className="form-check form-switch">
+          <input checked={state_type == "transitive"} className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
+        </div>
       </div>
     </div>
 
@@ -493,11 +499,16 @@ let App = () => {
       </div>
       <div className="col">
         <div className="form-check form-switch">
-          <input className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
+          <input checked={!useCSVTable} className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
         </div>
       </div>
       <div className="col">
         CSV table
+      </div>
+      <div className="col">
+        <div className="form-check form-switch">
+          <input checked={useCSVTable} className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
+        </div>
       </div>
     </div>
 
