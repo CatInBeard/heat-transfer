@@ -1,20 +1,21 @@
 {
   "files": {
     "main.css": "./static/css/main.e38f7ec2.css",
-    "main.js": "./static/js/main.6babaccd.js",
-    "fixtures/6651-elem.inp": "./fixtures/6651-elem.inp",
+    "main.js": "./static/js/main.f31e9029.js",
+    "fixtures/inp/6651-elem.inp": "./fixtures/inp/6651-elem.inp",
     "static/media/bootstrap-icons.woff?": "./static/media/bootstrap-icons.39795c0b4513de014cf8.woff",
-    "fixtures/1720-elem.inp": "./fixtures/1720-elem.inp",
+    "fixtures/inp/1720-elem.inp": "./fixtures/inp/1720-elem.inp",
     "static/media/bootstrap-icons.woff2?": "./static/media/bootstrap-icons.b7bcc075b395c14ce8c2.woff2",
-    "fixtures/760-elem.inp": "./fixtures/760-elem.inp",
-    "fixtures/200-elem.inp": "./fixtures/200-elem.inp",
-    "fixtures/13-elem.inp": "./fixtures/13-elem.inp",
+    "fixtures/inp/760-elem.inp": "./fixtures/inp/760-elem.inp",
+    "fixtures/inp/200-elem.inp": "./fixtures/inp/200-elem.inp",
+    "fixtures/bc_csv/nevada2023.csv": "./fixtures/bc_csv/nevada2023.csv",
+    "fixtures/inp/13-elem.inp": "./fixtures/inp/13-elem.inp",
     "index.html": "./index.html",
     "main.e38f7ec2.css.map": "./static/css/main.e38f7ec2.css.map",
-    "main.6babaccd.js.map": "./static/js/main.6babaccd.js.map"
+    "main.f31e9029.js.map": "./static/js/main.f31e9029.js.map"
   },
   "entrypoints": [
     "static/css/main.e38f7ec2.css",
-    "static/js/main.6babaccd.js"
+    "static/js/main.f31e9029.js"
   ]
 }
