@@ -48,6 +48,7 @@ let App = () => {
   const [stepIncrement, setStepIncrement] = useState(0.1);
   const [steps, setSteps] = useState(100);
   const [elementsCount, setElementsCount] = useState(0);
+  const [nodesCount, setNodesCount] = useState(0);
   const [expressionHelpStatus, setExpressionHelpStatus] = useState(false);
   const [useCSVTable, setUseCSVTable] = useState(false);
   const [uploadCSVTableBCName, setuploadCSVTableBCName] = useState(false);
@@ -158,20 +159,20 @@ let App = () => {
   }
 
   const tryCsvTextToArray = (text) => {
-    const defaultValue = [["",""]];
+    const defaultValue = [["", ""]];
     try {
       const rows = text.split('\n');
       if (rows.length === 0) {
         return defaultValue;
       }
       const data = rows.map(row => {
-        const columns = row.split(',').map( (col) => parseFloat(col));
+        const columns = row.split(',').map((col) => parseFloat(col));
         if (columns.length !== 2) {
           return defaultValue;
         }
         return columns;
       });
-      data.push(["",""])
+      data.push(["", ""])
       return data;
     } catch (error) {
       console.warn(error)
@@ -241,6 +242,11 @@ let App = () => {
           Elements: {elementsCount}
         </div>
       </div>
+      <div className="row">
+        <div className="col p-1">
+          Nodes: {nodesCount}
+        </div>
+      </div>
     </div> : <></>;
 
   const transitivePlayer = state_type == "transitive" ?
@@ -305,6 +311,7 @@ let App = () => {
         var text = e.target.result;
         let inpData = parseInpText(text);
         setElementsCount(inpData.problemData[0].elements.length);
+        setNodesCount(inpData.problemData[0].nodes.length);
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
         dispatch(setcomputingStatus({ status: "ready" }))
@@ -355,6 +362,7 @@ let App = () => {
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
         setElementsCount(inpData.problemData[0].elements.length);
+        setNodesCount(inpData.problemData[0].nodes.length);
         dispatch(setcomputingStatus({ status: "ready" }))
       }
       catch (error) {
