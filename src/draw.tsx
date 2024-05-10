@@ -1,4 +1,5 @@
-import { Mesh, findMinMaxCoordinates, MinMax } from "./mesh.tsx"
+import { Mesh, findMinMaxCoordinates, MinMax, Point } from "./mesh.tsx"
+import { TemperatureBCTransitive, Nset } from "./inpParse.tsx"
 
 type Coords = {
     x: number,
@@ -266,6 +267,49 @@ function findMinMax(arr: number[][]) {
   return { min, max };
 }
 
+const hilightBC = (inpData, Mesh: Mesh, canvas, bcName) => {
+    const pointSize = 0.8;
+    const lineSize = 0.05;
+
+    const ctx = canvas.getContext('2d');
+
+    let points: Point[]= [];
+
+    let BC = inpData.steps[0].boundaries.temperature.find( (temperature: TemperatureBCTransitive) => {
+        return temperature.name == bcName
+    })
+
+    let setName = BC.setName
+    let nset: Nset | undefined = inpData.assembly.nsets.find((nset: Nset) => {
+        return nset.setname == setName;
+    });
+    if (!nset) {
+        throw new Error("Nset not found");
+    }
+
+    nset.nodes.forEach((node) => {
+        points.push(Mesh.points[node - 1])
+    })
+
+    points.forEach(point => {
+
+        
+        ctx.fillStyle = 'rgb(255,0,0)';
+        ctx.beginPath();
+        let coords = localCoordsToCnavasCoords({ x: point.x, y: point.y }, Mesh, canvas);
+
+        ctx.arc(
+            coords.x,
+            coords.y,
+            (pointSize / 2) * Mesh.scale,
+            0,
+            2 * Math.PI
+        );
+        ctx.fill();
+        ctx.closePath();
+
+    });
+}
 
 
-export { drawMesh, drawTemperatureMap, findMinMax}  
+export { drawMesh, drawTemperatureMap, findMinMax, hilightBC}  

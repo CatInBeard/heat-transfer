@@ -28,7 +28,7 @@ type MinMax = {
 const convertInpDataToMesh = (inpData, height, width): Mesh => {
 
     let scale = 8;
-    
+
 
     let points: Array<Point> = []
     let lines: Array<Line> = []
@@ -40,31 +40,31 @@ const convertInpDataToMesh = (inpData, height, width): Mesh => {
     inpData.problemData[0].elements.forEach(element => {
 
         lines.push({
-            start_x: points[element[1]-1].x,
-            start_y: points[element[1]-1].y,
-            end_x: points[element[2]-1].x,
-            end_y: points[element[2]-1].y
+            start_x: points[element[1] - 1].x,
+            start_y: points[element[1] - 1].y,
+            end_x: points[element[2] - 1].x,
+            end_y: points[element[2] - 1].y
         })
 
         lines.push({
-            start_x: points[element[1]-1].x,
-            start_y: points[element[1]-1].y,
-            end_x: points[element[3]-1].x,
-            end_y: points[element[3]-1].y
+            start_x: points[element[1] - 1].x,
+            start_y: points[element[1] - 1].y,
+            end_x: points[element[3] - 1].x,
+            end_y: points[element[3] - 1].y
         })
 
         lines.push({
-            start_x: points[element[2]-1].x,
-            start_y: points[element[2]-1].y,
-            end_x: points[element[3]-1].x,
-            end_y: points[element[3]-1].y
+            start_x: points[element[2] - 1].x,
+            start_y: points[element[2] - 1].y,
+            end_x: points[element[3] - 1].x,
+            end_y: points[element[3] - 1].y
         })
     });
 
     let minMax: MinMax = findMinMaxCoordinates(points);
 
-    let scaleX = height/(minMax.max_x - minMax.min_x + 20);
-    let scaleY = width/(minMax.max_y - minMax.min_y);
+    let scaleX = height / (minMax.max_x - minMax.min_x + 20);
+    let scaleY = width / (minMax.max_y - minMax.min_y);
 
     scale = scaleX > scaleY ? scaleY : scaleX;
 
@@ -108,4 +108,4 @@ const findMinMaxCoordinates = (points: Array<Point>): MinMax => {
 }
 
 
-export { convertInpDataToMesh, Mesh, MinMax, findMinMaxCoordinates };
+export { convertInpDataToMesh, Mesh, MinMax, findMinMaxCoordinates, Point };

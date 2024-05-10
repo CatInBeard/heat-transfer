@@ -19,7 +19,7 @@ import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh.tsx"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
 import { computeSteadyState } from './computeHeatTransfer.tsx';
-import { drawMesh, drawTemperatureMap, findMinMax } from './draw.tsx';
+import { drawMesh, drawTemperatureMap, findMinMax, hilightBC } from './draw.tsx';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 import InsertCsvTableComponent from "./components/insertCsvTableComponent.jsx"
@@ -59,6 +59,7 @@ let App = () => {
   const [isPlaying, setIsPlaying] = useState(true);
   const [playerFrame, setPlayerFrame] = useState(0);
   const [playerInterval, setPlayerInterval] = useState(0);
+  const [BCHilight, setBCHilight] = useState(false);
 
   const [minT, setMinT] = useState(0);
   const [maxT, setMaxT] = useState(0);
@@ -104,17 +105,20 @@ let App = () => {
 
       }
 
+      if (Mesh && BCHilight) {
+        hilightBC(inpData, Mesh, canvasRef.current, BCHilight)
+      }
     }
 
 
-  }, [Mesh, gridVisible, blocksVisibility, nodesTemperature, preDrawFrames, playerFrame]);
+  }, [Mesh, gridVisible, blocksVisibility, nodesTemperature, preDrawFrames, playerFrame, BCHilight]);
 
 
   const toggle_bc_librabry = () => {
-    if(show_load_bc_from_library == false){
+    if (show_load_bc_from_library == false) {
       set_show_load_bc_from_library(uploadCSVTableBCName);
     }
-    else{
+    else {
       set_show_load_bc_from_library(false);
     }
   }
@@ -139,6 +143,15 @@ let App = () => {
 
   const closeCsvTableInsert = () => {
     setCsvTableInsertBCName(null)
+  }
+
+  const onFocusBc = (event) => {
+    let bcName = event.target.getAttribute('data-bc-name');
+    setBCHilight(bcName)
+  }
+
+  const onBlurBC = () => {
+    setBCHilight(false)
   }
 
   const uploadCSV = (file) => {
@@ -652,7 +665,7 @@ let App = () => {
                 <label>{boundary.name}:</label>
               </div>
               <div className="col">
-                <textarea data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className={"form-control " + style.BCTextarea} rows={2}></textarea>
+                <textarea onFocus={onFocusBc} onBlur={onBlurBC} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className={"form-control " + style.BCTextarea} rows={2}></textarea>
               </div>
               <div className="col">
                 <i onClick={openCSVUpload} data-bc-name={boundary.name} title='Upload CSV' className={'bi bi-upload ' + style.clickCursor}></i> <i onClick={openCsvTableInsert} data-bc-name={boundary.name} title='Insert table manually' className={'bi bi-table ' + style.clickCursor}></i>
@@ -667,7 +680,7 @@ let App = () => {
                 <label>{boundary.name}:</label>
               </div>
               <div className="col">
-                <input min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
+                <input onFocus={onFocusBc} onBlur={onBlurBC} min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
               </div>
               <div className="col">
                 &deg;C   {state_type == "steady" ? "" : <i onClick={OnExpressionHelp} title='You can use math expression with t variable' className={'bi bi-question-circle ' + style.helpCursor}></i>}
