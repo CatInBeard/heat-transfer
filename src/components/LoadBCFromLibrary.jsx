@@ -4,6 +4,7 @@ let LoadBCFromLibrary = ({ cancelAction, confirmAction }) => {
 
     const fixturesBCCSVFileNames = [
         "nevada2023.csv",
+        "siberia.csv",
     ]
 
     const remoteLib = [
