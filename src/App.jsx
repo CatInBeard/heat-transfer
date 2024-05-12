@@ -522,7 +522,10 @@ let App = () => {
 
   return (
     <div className="container-lg mt-3">
-      <h1>{!isTransitive ? "Steady-state" : "Transitive"} heat transfer</h1>
+      <header>
+        <h1>{!isTransitive ? "Steady-state" : "Transitive"} heat transfer</h1>
+      </header>
+      <main>
       {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
       {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
       {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
@@ -565,6 +568,10 @@ let App = () => {
         </div>
 
       </div>
+      </main>
+      <footer className='border-top p-2'>
+        <a className='text-muted' href='https://github.com/CatInBeard/heat-transfer/'>Get source code</a>
+      </footer>
     </div>
   );
 }
