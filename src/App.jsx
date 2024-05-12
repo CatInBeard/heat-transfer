@@ -55,7 +55,7 @@ let App = () => {
   const [useCSVTable, setUseCSVTable] = useState(false);
   const [uploadCSVTableBCName, setuploadCSVTableBCName] = useState(false);
   const [csvTableInsertBCName, setCsvTableInsertBCName] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [playerFrame, setPlayerFrame] = useState(0);
   const [playerInterval, setPlayerInterval] = useState(0);
   const [BCHilight, setBCHilight] = useState(false);
@@ -212,7 +212,7 @@ let App = () => {
   const togglePlaying = () => {
     if (computingStatus == "computed") {
       setIsPlaying(!isPlaying)
-      if (isPlaying) {
+      if (!isPlaying) {
 
         let i = 0;
         const intervalId = setInterval(() => {
@@ -222,7 +222,7 @@ let App = () => {
 
           if (i >= MaxFrames) {
             clearInterval(intervalId);
-            setIsPlaying(true)
+            setIsPlaying(false)
           }
         }, 100);
         setPlayerInterval(intervalId)
@@ -245,6 +245,10 @@ let App = () => {
       return
     }
     setPlayerFrame(playerFrame - 1)
+  }
+
+  const updateFrameFromRange = (event) => {
+    setPlayerFrame(event.target.value)
   }
 
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
@@ -277,8 +281,11 @@ let App = () => {
     <div className='p-2 d-flex flex-row col-9'>
       <div className='fs-3 text-center m-2'>
         <i onClick={onPrevFrameClick} className={"bi bi-skip-start" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-        <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "play" : "pause") + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+        <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "pause" : "play") + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
         <i onClick={onNextFrameClick} className={"bi bi-skip-end" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
+      </div>
+      <div className='fs-3 text-center m-2'>
+        <input disabled={computingStatus != "computed"} onChange={updateFrameFromRange} value={playerFrame} type='range' min={0} max={MaxFrames - 1} step={1}/>
       </div>
       <div className="fs-3 m-2">
         frame: {playerFrame} {MaxFrames > 0 ? "/ " + (MaxFrames - 1) : ""}
