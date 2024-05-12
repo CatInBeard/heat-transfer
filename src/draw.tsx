@@ -258,7 +258,7 @@ function findMinMax(arr: number[][]) {
 
 const hilightBC = (inpData, Mesh: Mesh, canvas, bcName) => {
     const pointSize = 0.8;
-    const lineSize = 0.05;
+    const legentOffset = 70;
 
     const ctx = canvas.getContext('2d');
 
@@ -288,7 +288,7 @@ const hilightBC = (inpData, Mesh: Mesh, canvas, bcName) => {
         let coords = localCoordsToCnavasCoords({ x: point.x, y: point.y }, Mesh, canvas);
 
         ctx.arc(
-            coords.x,
+            coords.x + legentOffset,
             coords.y,
             (pointSize / 2) * Mesh.scale,
             0,
