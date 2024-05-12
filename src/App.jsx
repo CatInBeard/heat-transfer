@@ -17,7 +17,6 @@ import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
 import { convertInpDataToMesh } from "./mesh"
 import { setMesh, toggleGridVisibility, setNodesTemperature } from "./store/reducers/canvas.jsx"
-import { computeSteadyState } from './computeHeatTransfer';
 import { drawMesh, drawTemperatureMap, findMinMax, hilightBC } from './draw';
 import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
@@ -482,25 +481,35 @@ let App = () => {
             }
           };
 
-
-          return;
         }
         else {
-          temperatures = computeSteadyState(inpData, temperature_BC, blocks_termal_conductivity);
-          console.log(JSON.stringify(temperatures));
+          const steadyWorker = new Worker(new URL("./computeSteadyWorker.ts", import.meta.url));
+
+          steadyWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity });
+
+          steadyWorker.onmessage = function (event) {
+            if (event.data.action == "done") {
+              let temperatures = event.data.result;
+              const end = performance.now();
+              console.log("Solved in " + (end - start).toString() + " milliseconds.");
+              dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
+              dispatch(setcomputingStatus({ status: "computed" }))
+              steadyWorker.terminate();
+            }
+            else if (event.data.action == "error") {
+              let error = event.data.result;
+              console.error(error);
+              setErrorPopup({ title: "Error computing", text: error.message });
+              dispatch(setcomputingStatus({ status: "ready" }))
+              steadyWorker.terminate();
+            }
+          };
         }
-
-        const end = performance.now();
-        console.log("Solved in " + (end - start).toString() + " milliseconds.");
-
-
-        dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
       }
       catch (error) {
         console.error(error);
         setErrorPopup({ title: "Error computing", text: error.message });
       }
-      dispatch(setcomputingStatus({ status: "computed" }))
     }, 100)
   }
 
@@ -526,48 +535,48 @@ let App = () => {
         <h1>{!isTransitive ? "Steady-state" : "Transitive"} heat transfer</h1>
       </header>
       <main>
-      {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
-      {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
-      {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
-      {hint_status && <HintComponent cancelAction={hintClick}></HintComponent>}
-      {upload_status && <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick} />}
-      {show_load_from_library && <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary>}
-      {show_load_bc_from_library && <LoadBCFromLibrary confirmAction={confirmChooseBCFromLibrary} cancelAction={toggle_bc_librabry}></LoadBCFromLibrary>}
-      {errorPopup && <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup>}
-      <div ref={canvasDiv} className={style.scrollable}>
-        <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
-      </div>
-      {transitivePlayer}
-      <div className='d-flex align-items-baseline'>
-        <div className='p-2 d-flex flex-column col-3'>
-          <div className='p-2'>
-            Сhange thermal conductivity coefficient
+        {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
+        {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
+        {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
+        {hint_status && <HintComponent cancelAction={hintClick}></HintComponent>}
+        {upload_status && <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick} />}
+        {show_load_from_library && <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary>}
+        {show_load_bc_from_library && <LoadBCFromLibrary confirmAction={confirmChooseBCFromLibrary} cancelAction={toggle_bc_librabry}></LoadBCFromLibrary>}
+        {errorPopup && <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup>}
+        <div ref={canvasDiv} className={style.scrollable}>
+          <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
+        </div>
+        {transitivePlayer}
+        <div className='d-flex align-items-baseline'>
+          <div className='p-2 d-flex flex-column col-3'>
+            <div className='p-2'>
+              Сhange thermal conductivity coefficient
+            </div>
+
+            {!canChangeSectionsSettings && <NeedUploadHint />}
+            {canChangeSectionsSettings && <SectionSettings inpData={inpData} blocksVisibility={blocksVisibility} blocks_termal_conductivity={blocks_termal_conductivity} blocks_specific_heat={blocks_specific_heat} blocks_density={blocks_density} toggleBlock={toggleBlock} isTransitive={isTransitive} onBlockDensityChange={onBlockDensityChange} onBlockSpecificHeatChange={onBlockSpecificHeatChange} onBlockConductivityChange={onBlockConductivityChange} />}
+
+          </div>
+          <div className='p-2 d-flex flex-column col-3'>
+            <div className='p-2'>
+              Change temperature
+            </div>
+            {canChangeBC && <BCEditor temperature_BC={temperature_BC} useCSVTable={useCSVTable} onFocusBc={onFocusBc} onBlurBC={onBlurBC} onBCTemperatureChange={onBCTemperatureChange} openCSVUpload={openCSVUpload} openCsvTableInsert={openCsvTableInsert} isTransitive={isTransitive} OnExpressionHelp={OnExpressionHelp} />}
+            {isTransitive && <TransitiveSettings initialTemp={initialTemp} onInitialTChange={onInitialTChange} stepIncrement={stepIncrement} onStepIncrementChange={onStepIncrementChange} steps={steps} onStepsChange={onStepsChange} />}
+          </div>
+          <div className='p-2 d-flex flex-column'>
+            <InpLoaderButton uploadClick={uploadClick} hintClick={hintClick} />
+            <ComputingStatus computingStatus={computingStatus} state_type={state_type} transitiveProgress={transitiveProgress} />
+            <StatusComponent inpData={inpData} nodesCount={nodesCount} elementsCount={elementsCount} />
+            <div className='p-2'>
+              <StateSwitcher isTransitive={isTransitive} canStartComputing={canStartComputing} changeProblemState={changeProblemState} />
+            </div>
+            <StartButton canStartComputing={canStartComputing} startComputing={startComputing} />
+            <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
+            {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
           </div>
 
-          {!canChangeSectionsSettings && <NeedUploadHint />}
-          {canChangeSectionsSettings && <SectionSettings inpData={inpData} blocksVisibility={blocksVisibility} blocks_termal_conductivity={blocks_termal_conductivity} blocks_specific_heat={blocks_specific_heat} blocks_density={blocks_density} toggleBlock={toggleBlock} isTransitive={isTransitive} onBlockDensityChange={onBlockDensityChange} onBlockSpecificHeatChange={onBlockSpecificHeatChange} onBlockConductivityChange={onBlockConductivityChange} />}
-
         </div>
-        <div className='p-2 d-flex flex-column col-3'>
-          <div className='p-2'>
-            Change temperature
-          </div>
-          {canChangeBC && <BCEditor temperature_BC={temperature_BC} useCSVTable={useCSVTable} onFocusBc={onFocusBc} onBlurBC={onBlurBC} onBCTemperatureChange={onBCTemperatureChange} openCSVUpload={openCSVUpload} openCsvTableInsert={openCsvTableInsert} isTransitive={isTransitive} OnExpressionHelp={OnExpressionHelp} />}
-          {isTransitive && <TransitiveSettings initialTemp={initialTemp} onInitialTChange={onInitialTChange} stepIncrement={stepIncrement} onStepIncrementChange={onStepIncrementChange} steps={steps} onStepsChange={onStepsChange} />}
-        </div>
-        <div className='p-2 d-flex flex-column'>
-          <InpLoaderButton uploadClick={uploadClick} hintClick={hintClick} />
-          <ComputingStatus computingStatus={computingStatus} state_type={state_type} transitiveProgress={transitiveProgress} />
-          <StatusComponent inpData={inpData} nodesCount={nodesCount} elementsCount={elementsCount} />
-          <div className='p-2'>
-            <StateSwitcher isTransitive={isTransitive} canStartComputing={canStartComputing} changeProblemState={changeProblemState} />
-          </div>
-          <StartButton canStartComputing={canStartComputing} startComputing={startComputing} />
-          <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
-          {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
-        </div>
-
-      </div>
       </main>
       <footer className='border-top p-2'>
         <a className='text-muted' href='https://github.com/CatInBeard/heat-transfer/'>Get source code</a>
