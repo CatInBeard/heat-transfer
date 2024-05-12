@@ -1,0 +1,9 @@
+.helpCursor {
+    cursor: pointer
+}
+.clickCursor {
+    cursor: pointer;
+}
+.forbiddenCursor{
+    cursor: not-allowed;
+}

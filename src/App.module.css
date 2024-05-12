@@ -1,22 +1,3 @@
 .scrollable{
     overflow-x: auto;
 }
-
-.inputMinSize{
-    min-width: 4em;
-}
-.inputMinSizeLarge{
-    min-width: 8em;
-}
-.helpCursor {
-    cursor: pointer
-}
-.clickCursor {
-    cursor: pointer;
-}
-.forbiddenCursor{
-    cursor: not-allowed;
-}
-.BCTextarea {
-    min-width: 9ch;
-}

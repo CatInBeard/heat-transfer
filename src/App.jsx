@@ -12,7 +12,6 @@ import HintComponent from './components/HintComponent.jsx';
 import ExpressionHelpComponent from "./components/ExpressionHelpComponent.jsx"
 import UploadComponent from './components/UploadComponent.jsx';
 import { parseInpText, checkInpDataForHeatTransfer } from './inpParse';
-import { getStatusText } from './statusExplain.jsx';
 import style from "./App.module.css"
 import cnvStyle from "./canvas.module.css"
 import ErrorPopup from "./components/ErrorPopup.jsx"
@@ -24,6 +23,18 @@ import LoadFromLibrary from "./components/LoadFromLibrary.jsx"
 import UploadCsvComponent from "./components/uploadCsvComponent.jsx"
 import InsertCsvTableComponent from "./components/insertCsvTableComponent.jsx"
 import LoadBCFromLibrary from "./components/LoadBCFromLibrary.jsx"
+import StatusComponent from './components/StatusComponent.jsx';
+import TransitivePlayerComponent from './components/TransitivePlayerComponent.jsx';
+import TransitiveTableSwitcher from './components/TransitiveTableSwitch.jsx';
+import GridSettingsButton from './components/GridSettingsButton.jsx';
+import StartButton from './components/StartButton.jsx';
+import StateSwitcher from './components/StateSwitcher.jsx';
+import ComputingStatus from './components/ComputingStatus.jsx';
+import InpLoaderButton from './components/InpLoaderButton.jsx';
+import TransitiveSettings from './components/TransitiveSettings.jsx';
+import BCEditor from './components/BCEditor.jsx';
+import SectionSettings from './components/SectionSettings.jsx';
+import NeedUploadHint from './components/NeedUploadHint.jsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -69,6 +80,9 @@ let App = () => {
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
+
+
+  const isTransitive = state_type === "transitive"
 
   useEffect(() => {
 
@@ -253,44 +267,9 @@ let App = () => {
 
   const canStartComputing = computingStatus == "ready" || computingStatus == "computed";
 
-  const statusData = inpData ?
-    <div className='p-2'>
-      <div className="row">
-        <div className="col p-1">
-          Job name: {inpData.heading.jobName}
-        </div>
-      </div>
-      <div className="row">
-        <div className="col p-1">
-          Model name: {inpData.heading.modelName}
-        </div>
-      </div>
-      <div className="row">
-        <div className="col p-1">
-          Elements: {elementsCount}
-        </div>
-      </div>
-      <div className="row">
-        <div className="col p-1">
-          Nodes: {nodesCount}
-        </div>
-      </div>
-    </div> : <></>;
 
-  const transitivePlayer = state_type == "transitive" ?
-    <div className='p-2 d-flex flex-row col-9'>
-      <div className='fs-3 text-center m-2'>
-        <i onClick={onPrevFrameClick} className={"bi bi-skip-start" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-        <i onClick={togglePlaying} className={"bi bi-" + (isPlaying ? "pause" : "play") + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-        <i onClick={onNextFrameClick} className={"bi bi-skip-end" + (computingStatus == "computed" ? "-fill" : "") + " " + (computingStatus == "computed" ? style.clickCursor : style.forbiddenCursor)}></i>
-      </div>
-      <div className='fs-3 text-center m-2'>
-        <input disabled={computingStatus != "computed"} onChange={updateFrameFromRange} value={playerFrame} type='range' min={0} max={MaxFrames - 1} step={1}/>
-      </div>
-      <div className="fs-3 m-2">
-        frame: {playerFrame} {MaxFrames > 0 ? "/ " + (MaxFrames - 1) : ""}
-      </div>
-    </div>
+  const transitivePlayer = isTransitive ?
+    <TransitivePlayerComponent onPrevFrameClick={onPrevFrameClick} togglePlaying={togglePlaying} onNextFrameClick={onNextFrameClick} clickable={computingStatus == "computed"} updateFrameFromRange={updateFrameFromRange} playerFrame={playerFrame} MaxFrames={MaxFrames} isPlaying={isPlaying} />
     : <></>
 
   const onBlockConductivityChange = (event) => {
@@ -360,7 +339,7 @@ let App = () => {
 
   const changeProblemState = (event) => {
 
-    const newState = state_type == "transitive" ? "steady" : "transitive";
+    const newState = isTransitive ? "steady" : "transitive";
 
     dispatch(setHeatStateType({ type: newState }))
   }
@@ -452,18 +431,18 @@ let App = () => {
 
         let temperatures;
 
-        if (state_type == "transitive") {
+        if (isTransitive) {
 
-          setMaxFrames(parseFloat(steps)+1);
+          setMaxFrames(parseFloat(steps) + 1);
           setTransitiveProgress(0)
           setPlayerFrame(0)
 
           let counter = 0;
-          
+
           setPreDrawFrames([])
 
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
-          
+
 
           transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps });
 
@@ -476,7 +455,7 @@ let App = () => {
 
               setPreDrawFrames(temperatureFrames)
 
-              let {min, max} = findMinMax(temperatureFrames)
+              let { min, max } = findMinMax(temperatureFrames)
 
               setMinT(min)
               setMaxT(max)
@@ -529,172 +508,6 @@ let App = () => {
   const canChangeBC = computingStatus != "waiting" && inpData !== null;
   const canChangeGridVisibility = Boolean(Mesh);
 
-  const stateSwitcher =
-    <div className="row">
-      <div className="col">
-        Steady-state
-      </div>
-      <div className="col">
-        <div className="form-check form-switch">
-          <input checked={state_type != "transitive"} className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
-        </div>
-      </div>
-      <div className="col">
-        Transitive
-      </div>
-      <div className="col">
-        <div className="form-check form-switch">
-          <input checked={state_type == "transitive"} className="form-check-input" type="checkbox" disabled={!canStartComputing} onChange={changeProblemState} />
-        </div>
-      </div>
-    </div>
-
-  const transitiveTableSwitcher = state_type == "steady" ? <></> :
-    <div className="row">
-      <div className="col">
-        Const/Formula
-      </div>
-      <div className="col">
-        <div className="form-check form-switch">
-          <input checked={!useCSVTable} className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
-        </div>
-      </div>
-      <div className="col">
-        CSV table
-      </div>
-      <div className="col">
-        <div className="form-check form-switch">
-          <input checked={useCSVTable} className="form-check-input" type="checkbox" onChange={changeUseCsvTable} />
-        </div>
-      </div>
-    </div>
-
-  let gridSettingsButton = !canChangeGridVisibility ? <></> : (gridVisible ?
-    <div className='p-2'>
-      <button onClick={toggleGrid} className='btn btn-secondary'>Hide mesh</button>
-    </div> :
-    <div className='p-2'>
-      <button onClick={toggleGrid} className='btn btn-primary'>Show mesh</button>
-    </div>)
-
-  let blocksSettings = !canChangeSectionsSettings ?
-    <div className='p-2'>
-      <div className="row">
-        <div className="col alert alert-info">
-          To change settings, first upload the file
-        </div>
-      </div>
-    </div> : <>
-      {inpData.problemData[0].sections.map((section) => {
-
-
-
-        let block_visibility = !blocksVisibility[section.name]
-        let block_termal_conductivity = blocks_termal_conductivity[section.name];
-        let block_specific_heat = blocks_specific_heat[section.name];
-        let block_density = blocks_density[section.name];
-        let Button = block_visibility ? <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-success'><nobr data-section-name={section.name}>Show</nobr></button> :
-          <button onClick={toggleBlock} data-section-name={section.name} className='btn btn-danger'><nobr data-section-name={section.name}>Hide</nobr></button>
-
-
-        let transitivePart = state_type == "transitive" ? <>
-          <div className='p-2 form-group row'>
-            <div className="row">
-              <div className='col'>
-                &rho;
-              </div>
-              <div className="col">
-                <input data-section-name={section.name} min={0} value={block_density} onChange={onBlockDensityChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
-              </div>
-              <div className='col'>
-                <label>kg/m<sup>3</sup></label>
-              </div>
-            </div>
-          </div>
-          <div className='p-2 form-group row'>
-            <div className="row">
-              <div className='col'>
-                <label>C</label>
-              </div>
-              <div className="col">
-                <input data-section-name={section.name} min={0} value={block_specific_heat} onChange={onBlockSpecificHeatChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
-              </div>
-              <div className='col'>
-                <label>J/°С</label>
-              </div>
-            </div>
-          </div>
-        </> :
-          <></>
-
-        return <>
-          <div className='p-2' key={section.name}>
-            <div className="row">
-              <div className="col">
-                {section.name}:
-              </div>
-              <div className="col">
-                {Button}
-              </div>
-            </div>
-          </div>
-          <div className='p-2 form-group row'>
-            <div className="row">
-              <div className='col'>
-                <label>P</label>
-              </div>
-              <div className="col">
-                <input data-section-name={section.name} min={0} value={block_termal_conductivity} onChange={onBlockConductivityChange} type='number' className={'form-control ' + style.inputMinSizeLarge}></input>
-              </div>
-              <div className='col'>
-                <label>W/mK</label>
-              </div>
-            </div>
-          </div>
-          {transitivePart}
-        </>
-      }
-      )}</>
-
-
-  const BCeditor = !canChangeBC ?
-    <></> :
-    <>
-      {temperature_BC.map((boundary) => {
-
-        if (useCSVTable) {
-          return <div className='p-2 form-group' key={boundary.name}>
-            <div className="row">
-              <div className='col'>
-                <label>{boundary.name}:</label>
-              </div>
-              <div className="col">
-                <textarea onFocus={onFocusBc} onBlur={onBlurBC} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} className={"form-control " + style.BCTextarea} rows={2}></textarea>
-              </div>
-              <div className="col">
-                <i onClick={openCSVUpload} data-bc-name={boundary.name} title='Upload CSV' className={'bi bi-upload ' + style.clickCursor}></i> <i onClick={openCsvTableInsert} data-bc-name={boundary.name} title='Insert table manually' className={'bi bi-table ' + style.clickCursor}></i>
-              </div>
-            </div>
-          </div>
-        }
-        else {
-          return <div className='p-2 form-group' key={boundary.name}>
-            <div className="row">
-              <div className='col'>
-                <label>{boundary.name}:</label>
-              </div>
-              <div className="col">
-                <input onFocus={onFocusBc} onBlur={onBlurBC} min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={state_type == "steady" ? "number" : "text"} className={'form-control ' + (state_type == "steady" ? style.inputMinSize : style.inputMinSizeLarge)}></input>
-              </div>
-              <div className="col">
-                &deg;C   {state_type == "steady" ? "" : <i onClick={OnExpressionHelp} title='You can use math expression with t variable' className={'bi bi-question-circle ' + style.helpCursor}></i>}
-              </div>
-            </div>
-          </div>
-        }
-
-      })}
-    </>
 
   const onInitialTChange = (event) => {
     setInitialTemp(event.target.value)
@@ -706,77 +519,18 @@ let App = () => {
     setSteps(event.target.value)
   }
 
-  const transitiveSettings = state_type == "steady" ? <></> :
-    <>
-      <div className='p-2 form-group' key="transitiveSettings">
-        <div className="row">
-          <div className='col'>
-            <label>Transitive settings:</label>
-          </div>
-        </div>
-      </div>
-      <div className='p-2 form-group' key="initalT">
-        <div className="row">
-          <div className='col'>
-            <label>Initial Temp:</label>
-          </div>
-          <div className="col">
-            <input value={initialTemp} min={0} onChange={onInitialTChange} type='number' className={'form-control ' + style.inputMinSize}></input>
-          </div>
-          <div className="col">
-            &deg;C
-          </div>
-        </div>
-      </div>
-
-      <div className='p-2 form-group' key="stepIncrement">
-        <div className="row">
-          <div className='col'>
-            <label>Step increment:</label>
-          </div>
-          <div className="col">
-            <input value={stepIncrement} min={0.000000000001} onChange={onStepIncrementChange} type='number' className={'form-control ' + style.inputMinSize}></input>
-          </div>
-          <div className="col">
-
-          </div>
-        </div>
-      </div>
-      <div className='p-2 form-group' key="steps">
-        <div className="row">
-          <div className='col'>
-            <label>Steps:</label>
-          </div>
-          <div className="col">
-            <input value={steps} min={1} onChange={onStepsChange} type='number' className={'form-control ' + style.inputMinSize}></input>
-          </div>
-          <div className="col">
-
-          </div>
-        </div>
-      </div>
-    </>;
-
-  const hint_component = hint_status ? <HintComponent cancelAction={hintClick}></HintComponent> : <></>
-  const upload_component = upload_status ? <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick}></UploadComponent> : <></>
-  const load_from_library_component = show_load_from_library ? <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary> : <></>
-  const load_bc_from_library_component = show_load_bc_from_library ? <LoadBCFromLibrary confirmAction={confirmChooseBCFromLibrary} cancelAction={toggle_bc_librabry}></LoadBCFromLibrary> : <></>
-  const error_component = errorPopup ? <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup> : <></>
-  const expression_help_component = expressionHelpStatus ? <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent> : <></>
-  const uploadCSV_component = uploadCSVTableBCName ? <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} /> : <></>
-  const insertCSVTable_component = csvTableInsertBCName ? <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} /> : <></>
 
   return (
     <div className="container-lg mt-3">
-      <h1>{state_type == "steady" ? "Steady-state" : "Transitive"} heat transfer</h1>
-      {expression_help_component}
-      {uploadCSV_component}
-      {insertCSVTable_component}
-      {hint_component}
-      {upload_component}
-      {load_from_library_component}
-      {load_bc_from_library_component}
-      {error_component}
+      <h1>{!isTransitive ? "Steady-state" : "Transitive"} heat transfer</h1>
+      {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
+      {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
+      {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
+      {hint_status && <HintComponent cancelAction={hintClick}></HintComponent>}
+      {upload_status && <UploadComponent inpLibraryAction={LoadFromLibraryClick} confirmAction={confirmUpload} fileType="*.inp" cancelAction={uploadClick} />}
+      {show_load_from_library && <LoadFromLibrary confirmAction={confirmChooseFromLibrary} cancelAction={LoadFromLibraryClick}></LoadFromLibrary>}
+      {show_load_bc_from_library && <LoadBCFromLibrary confirmAction={confirmChooseBCFromLibrary} cancelAction={toggle_bc_librabry}></LoadBCFromLibrary>}
+      {errorPopup && <ErrorPopup closeAction={closeError} title={errorPopup.title} text={errorPopup.text}></ErrorPopup>}
       <div ref={canvasDiv} className={style.scrollable}>
         <canvas id="canvas" width={1200} height={500} ref={canvasRef} className={cnvStyle.crosshairCursor}></canvas>
       </div>
@@ -787,42 +541,27 @@ let App = () => {
             Сhange thermal conductivity coefficient
           </div>
 
-          {blocksSettings}
+          {!canChangeSectionsSettings && <NeedUploadHint />}
+          {canChangeSectionsSettings && <SectionSettings inpData={inpData} blocksVisibility={blocksVisibility} blocks_termal_conductivity={blocks_termal_conductivity} blocks_specific_heat={blocks_specific_heat} blocks_density={blocks_density} toggleBlock={toggleBlock} isTransitive={isTransitive} onBlockDensityChange={onBlockDensityChange} onBlockSpecificHeatChange={onBlockSpecificHeatChange} onBlockConductivityChange={onBlockConductivityChange} />}
 
         </div>
         <div className='p-2 d-flex flex-column col-3'>
           <div className='p-2'>
             Change temperature
           </div>
-          {BCeditor}
-          {transitiveSettings}
+          {canChangeBC && <BCEditor temperature_BC={temperature_BC} useCSVTable={useCSVTable} onFocusBc={onFocusBc} onBlurBC={onBlurBC} onBCTemperatureChange={onBCTemperatureChange} openCSVUpload={openCSVUpload} openCsvTableInsert={openCsvTableInsert} isTransitive={isTransitive} OnExpressionHelp={OnExpressionHelp} />}
+          {isTransitive && <TransitiveSettings initialTemp={initialTemp} onInitialTChange={onInitialTChange} stepIncrement={stepIncrement} onStepIncrementChange={onStepIncrementChange} steps={steps} onStepsChange={onStepsChange} />}
         </div>
         <div className='p-2 d-flex flex-column'>
-          <div className='p-2'>Load data</div>
+          <InpLoaderButton uploadClick={uploadClick} hintClick={hintClick} />
+          <ComputingStatus computingStatus={computingStatus} state_type={state_type} transitiveProgress={transitiveProgress} />
+          <StatusComponent inpData={inpData} nodesCount={nodesCount} elementsCount={elementsCount} />
           <div className='p-2'>
-            <div className="row">
-              <div className="col p-1">
-                <button onClick={uploadClick} className='btn btn-primary'>
-                  <nobr>
-                    .inp <i className="bi bi-upload "></i>
-                  </nobr>
-                </button>
-              </div>
-              <div className="col p-1">
-                <button onClick={hintClick} className='btn btn-primary'>{hint_status ? "Hide" : "Hint"}</button>
-              </div>
-            </div>
+            <StateSwitcher isTransitive={isTransitive} canStartComputing={canStartComputing} changeProblemState={changeProblemState} />
           </div>
-          <div className='p-2'>Status: <b>{getStatusText(computingStatus, state_type, transitiveProgress)}</b></div>
-          {statusData}
-          <div className='p-2'>
-            {stateSwitcher}
-          </div>
-          <div className='p-2'>
-            <button disabled={!canStartComputing} onClick={startComputing} className='btn btn-lg btn-primary'>Start</button>
-          </div>
-          {gridSettingsButton}
-          {transitiveTableSwitcher}
+          <StartButton canStartComputing={canStartComputing} startComputing={startComputing} />
+          <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
+          {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
         </div>
 
       </div>

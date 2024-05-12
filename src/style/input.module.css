@@ -1,0 +1,9 @@
+.inputMinSize{
+    min-width: 4em;
+}
+.inputMinSizeLarge{
+    min-width: 8em;
+}
+.BCTextarea {
+    min-width: 9ch;
+}
