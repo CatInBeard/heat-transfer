@@ -22,6 +22,7 @@ type Color = {
 const drawMesh = (Mesh: Mesh, canvas) => {
     const pointSize = 0.8;
     const lineSize = 0.05;
+    const legentOffset = 70;
 
     const ctx = canvas.getContext('2d');
 
@@ -32,7 +33,7 @@ const drawMesh = (Mesh: Mesh, canvas) => {
         let coords = localCoordsToCnavasCoords({ x: point.x, y: point.y }, Mesh, canvas);
 
         ctx.arc(
-            coords.x,
+            coords.x + legentOffset,
             coords.y,
             (pointSize / 2) * Mesh.scale,
             0,
@@ -49,9 +50,9 @@ const drawMesh = (Mesh: Mesh, canvas) => {
 
         let coords = localCoordsToCnavasCoords({ x: line.start_x, y: line.start_y }, Mesh, canvas);
 
-        ctx.moveTo(coords.x, coords.y);
+        ctx.moveTo(coords.x + legentOffset, coords.y);
         coords = localCoordsToCnavasCoords({ x: line.end_x, y: line.end_y }, Mesh, canvas);
-        ctx.lineTo(coords.x, coords.y);
+        ctx.lineTo(coords.x + legentOffset, coords.y);
         ctx.lineWidth = lineSize * Mesh.scale;
         ctx.stroke();
     })
@@ -63,6 +64,8 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
     const ctx = canvas.getContext('2d');
     if (!ctx)
         return
+
+    const legentOffset = 70;
 
     const ctxImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const imageData = ctxImageData.data;
@@ -117,7 +120,7 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
             let coords: Coords = localCoordsToCnavasCoords({ x: node[1], y: node[2] }, Mesh, canvas)
             let temperature: number = nodesTemperatures[node[0] - 1];
 
-            return { x: coords.x, y: coords.y, temperature: temperature }
+            return { x: coords.x + legentOffset, y: coords.y, temperature: temperature }
         })
 
 
@@ -133,21 +136,7 @@ const drawTemperatureMap = (Mesh, nodesTemperatures, inpData, blocksVisibility, 
     ctx.putImageData(ctxImageData, 0, 0);
 
 
-    let maxLeft: number = 0;
-
-    if (divElement.scrollWidth > divElement.clientWidth) {
-        Mesh.points.forEach(point => {
-
-            let coords = localCoordsToCnavasCoords({ x: point.x, y: point.y }, Mesh, canvas);
-
-            if (maxLeft < coords.x) {
-                maxLeft = coords.x
-            }
-        });
-        maxLeft += 30;
-    }
-
-    drawTemperatureLegend(canvas, minT, maxT, maxLeft);
+    drawTemperatureLegend(canvas, minT, maxT, 10);
 
 }
 
