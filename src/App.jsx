@@ -454,11 +454,12 @@ let App = () => {
 
         if (state_type == "transitive") {
 
+          setMaxFrames(parseFloat(steps)+1);
           setTransitiveProgress(0)
           setPlayerFrame(0)
 
           let counter = 0;
-          setMaxFrames(steps+1);
+          
           setPreDrawFrames([])
 
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
@@ -473,7 +474,6 @@ let App = () => {
               const end = performance.now();
               console.log("Solved in " + (end - start).toString() + " milliseconds.");
 
-              setMaxFrames(temperatureFrames.length)
               setPreDrawFrames(temperatureFrames)
 
               let {min, max} = findMinMax(temperatureFrames)
