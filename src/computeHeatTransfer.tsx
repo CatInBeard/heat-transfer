@@ -1,14 +1,11 @@
-import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, InverseMatrixLU } from "./matrix";
+import { transposeMatrix, MultiplyMatrix, MultiplyMatrixByVector, SumVector, multiplyVectorByNumber, solveLinearEquationSystem, multiplyMatrixByNumber, InverseMatrix, Determinant, InverseMatrixLU, SumMatrix } from "./matrix";
 import { Nset, Lset, Section, TemperatureBC, TemperatureBCTransitive } from "./inpParse"
-import { multiplyMatrixByNumberBig, SumVectorBig, multiplyVectorByNumberBig, MultiplyMatrixByVectorBig, solveLinearEquationSystemBig } from "./bigMatrix"
 import { evaluateMathExpression } from "./mathExpression"
 import { cloneDeep } from 'lodash';
-import Big from 'big.js';
 
 
-const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback, initialTemp = 0, timeStep = 0.1, steps = 500, useBig = false) => {
+const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback, initialTemp = 0, timeStep = 0.1, steps = 500, method = "forward") => {
 
-    Big.DP = 60;
 
     let freq = 1 / timeStep;
 
@@ -44,68 +41,95 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
 
     temperatureFrames.push(temperaturePrevStep);
 
+
+    switch (method) {
+        case "crank-nicolson":
+            cracnNicolsonSolve(steps, KForF, inpData, C, freq, K, temperaturePrevStep, F, temperatureCurrentStep, temperature_BC, temperatureFrames, progress_callback, timeStep);
+            break;
+        default:
+            forwardEulerTransitiveSolve(steps, KForF, inpData, C, freq, K, temperaturePrevStep, F, temperatureCurrentStep, temperature_BC, temperatureFrames, progress_callback, timeStep);
+    }
+
+    return temperatureFrames;
+
+}
+
+const forwardEulerTransitiveSolve = (steps, KForF, inpData, C, freq, K, temperaturePrevStep, F, temperatureCurrentStep, temperature_BC, temperatureFrames, progress_callback, timeStep) => {
+
     let progress = 0;
 
     let realTime = 0;
 
-    if (useBig) {
-        let bigC = floatMatrixToBig(C);
-        let bigK = floatMatrixToBig(K);
-        let bigFreq = new Big(freq);
-        let bigF = floatVectorToBig(F);
-        let bigTemperaturePrevStep = floatVectorToBig(temperaturePrevStep);
-        let bigTemperatureCurrentStep: Big[] = [];
+    for (let t = 0; t < steps; t++) {
 
-        for (let t = 0; t < steps; t++) {
+        F = getFForTransitive(KForF, inpData, realTime);
 
+        let A = multiplyMatrixByNumber(C, freq)
+        let b = SumVector(
+            SumVector(F, multiplyVectorByNumber(
+                MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
+            multiplyVectorByNumber(
+                MultiplyMatrixByVector(C, temperaturePrevStep), freq))
+        let Temperature = solveLinearEquationSystem(A, b)
 
-            let A = multiplyMatrixByNumberBig(bigC, bigFreq)
-            let b = SumVectorBig(
-                SumVectorBig(bigF, multiplyVectorByNumberBig(
-                    MultiplyMatrixByVectorBig(bigK, bigTemperaturePrevStep), new Big(-1))),
-                multiplyVectorByNumberBig(
-                    MultiplyMatrixByVectorBig(bigC, bigTemperaturePrevStep), bigFreq))
+        temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
 
-            let Temperature = solveLinearEquationSystemBig(A, b)
+        temperatureCurrentStep = Temperature
 
-            bigTemperatureCurrentStep = fixTemperatureFromBCBig(Temperature, inpData, temperature_BC)
+        temperatureFrames.push(temperatureCurrentStep);
+        temperaturePrevStep = temperatureCurrentStep;
 
-            let vector = BigVectorToFloat(bigTemperatureCurrentStep)
-            temperatureFrames.push(vector);
-            bigTemperaturePrevStep = bigTemperatureCurrentStep;
-
-            progress += 100 / steps
-            progress_callback(progress, vector)
-        }
-    }
-    else {
-        for (let t = 0; t < steps; t++) {
-
-            F = getFForTransitive(KForF, inpData, realTime);
-
-            let A = multiplyMatrixByNumber(C, freq)
-            let b = SumVector(
-                SumVector(F, multiplyVectorByNumber(
-                    MultiplyMatrixByVector(K, temperaturePrevStep), -1)),
-                multiplyVectorByNumber(
-                    MultiplyMatrixByVector(C, temperaturePrevStep), freq))
-            let Temperature = solveLinearEquationSystem(A, b)
-
-            temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
-
-            temperatureCurrentStep = Temperature
-
-            temperatureFrames.push(temperatureCurrentStep);
-            temperaturePrevStep = temperatureCurrentStep;
-
-            progress += 100 / steps
-            progress_callback(progress, temperatureCurrentStep)
-            realTime += timeStep
-        }
+        progress += 100 / steps
+        progress_callback(progress, temperatureCurrentStep)
+        realTime += timeStep
     }
 
+}
 
-    return temperatureFrames;
+const cracnNicolsonSolve = (steps, KForF, inpData, C, freq, K, temperaturePrevStep, F, temperatureCurrentStep, temperature_BC, temperatureFrames, progress_callback, timeStep) => {
+
+    let progress = 0;
+
+    let realTime = 0;
+
+    let FPrev = cloneDeep(F)
+
+    for (let t = 0; t < steps; t++) {
+
+        F = getFForTransitive(KForF, inpData, realTime);
+
+        let A = SumMatrix(C, multiplyMatrixByNumber(K, timeStep / 2));
+        let b = SumVector(
+            MultiplyMatrixByVector(
+                SumMatrix(
+                    C,
+                    multiplyMatrixByNumber(
+                        K,
+                        -1 * timeStep / 2
+                    )
+                ),
+                temperaturePrevStep
+            ),
+            multiplyVectorByNumber(
+                SumVector(FPrev, F),
+                timeStep / 2
+            )
+        )
+
+        let Temperature = solveLinearEquationSystem(A, b)
+
+        temperatureCurrentStep = fixTemperatureFromBC(Temperature, inpData, temperature_BC, realTime)
+
+        temperatureCurrentStep = Temperature
+
+        temperatureFrames.push(temperatureCurrentStep);
+        temperaturePrevStep = temperatureCurrentStep;
+
+        progress += 100 / steps
+        progress_callback(progress, temperatureCurrentStep)
+        realTime += timeStep
+        FPrev = cloneDeep(F)
+    }
 
 }
 
@@ -122,33 +146,6 @@ const computeSteadyState = (inpData, temperature_BC, blocks_termal_conductivity)
 
     return temperatures
 
-}
-
-const floatVectorToBig = (F: number[]): Big[] => {
-    let bigF: Big[] = [];
-    for (let i = 0; i < F.length; i++) {
-        bigF[i] = new Big(F[i]);
-    }
-    return bigF;
-}
-
-const BigVectorToFloat = (bigF: Array<Big>): number[] => {
-    let F: number[] = [];
-    for (let i = 0; i < bigF.length; i++) {
-        F[i] = bigF[i].toNumber()
-    }
-    return F;
-}
-
-const floatMatrixToBig = (A: number[][]): Big[][] => {
-    let bigA: Big[][] = [];
-    for (let i = 0; i < A.length; i++) {
-        bigA[i] = [];
-        for (let j = 0; j < A.length; j++) {
-            bigA[i][j] = new Big(A[i][j]);
-        }
-    }
-    return bigA;
 }
 
 
@@ -399,7 +396,7 @@ const getConductivityMatrixTransitive = (inpData, blocks_termal_conductivity) =>
 
         let Square = 0.5 * Math.abs(Xi * (Yj - Yk) + Xj * (Yk - Yi) + Xk * (Yi - Yj))
 
-        let K_local = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(invMatrix), conductivityMatrix), invMatrix),Square)
+        let K_local = multiplyMatrixByNumber(MultiplyMatrix(MultiplyMatrix(transposeMatrix(invMatrix), conductivityMatrix), invMatrix), Square)
 
 
         K = accumulateToGlobalMatrix(K, K_local, elements[i][1], elements[i][2], elements[i][3]);
@@ -413,16 +410,16 @@ const getConductivityMatrixTransitive = (inpData, blocks_termal_conductivity) =>
 
 function hasAnyNan(array) {
     for (let i = 0; i < array.length; i++) {
-      for (let j = 0; j < array[i].length; j++) {
-        if (isNaN(array[i][j])) {
-          return true;
+        for (let j = 0; j < array[i].length; j++) {
+            if (isNaN(array[i][j])) {
+                return true;
+            }
         }
-      }
     }
-  
+
     return false;
-  }
-  
+}
+
 
 const getConductivityMatrix = (inpData, blocks_termal_conductivity): Array<Array<number>> => {
 
@@ -554,35 +551,18 @@ const accumulateToGlobalMatrix = (globalMatrix: Array<Array<number>>, localMatri
     return globalMatrix;
 }
 
-const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC, t:number =0): number[] => {
+const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC, t: number = 0): number[] => {
 
     for (let i = 0; i < temperature_BC.length; i++) {
         let BC: TemperatureBCTransitive = temperature_BC[i];
 
         let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
 
-        let temp = evaluateMathExpression(BC.temperature.toString(),t);
+        let temp = evaluateMathExpression(BC.temperature.toString(), t);
 
         for (let i = 0; i < nodes.length; i++) {
             let node: number = nodes[i];
             temperature[node - 1] = temp;
-        }
-
-    }
-
-    return temperature
-}
-
-const fixTemperatureFromBCBig = (temperature: Big[], inpData, temperature_BC): Big[] => {
-
-    for (let i = 0; i < temperature_BC.length; i++) {
-        let BC: TemperatureBC = temperature_BC[i];
-
-        let nodes: number[] = getNodesByAssemblySetName(BC.setName, inpData);
-
-        for (let i = 0; i < nodes.length; i++) {
-            let node: number = nodes[i];
-            temperature[node - 1] = new Big(BC.temperature);
         }
 
     }

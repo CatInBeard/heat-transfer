@@ -34,6 +34,8 @@ import TransitiveSettings from './components/TransitiveSettings.jsx';
 import BCEditor from './components/BCEditor.jsx';
 import SectionSettings from './components/SectionSettings.jsx';
 import NeedUploadHint from './components/NeedUploadHint.jsx';
+import TransitiveSolverMethodSwitcher from './components/TransitiveSolverMethodSwitch.jsx';
+import MethodHelpComponent from './components/MethodHelpComponent.jsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -76,6 +78,9 @@ let App = () => {
 
   const [MaxFrames, setMaxFrames] = useState(0);
   const [preDrawFrames, setPreDrawFrames] = useState([])
+
+  const [transitiveMethod, setTransitiveMethod] = useState("forward")
+  const [methodHelpStatus, setMethodHelpStatus] = useState(false);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -137,6 +142,10 @@ let App = () => {
 
   const OnExpressionHelp = () => {
     setExpressionHelpStatus(!expressionHelpStatus)
+  }
+
+  const OnMethodHelp = () => {
+    setMethodHelpStatus(!methodHelpStatus)
   }
 
   const openCSVUpload = (event) => {
@@ -443,7 +452,7 @@ let App = () => {
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
 
 
-          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps });
+          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps, method: transitiveMethod });
 
           transitiveWorker.onmessage = function (event) {
             if (event.data.action == "done") {
@@ -536,6 +545,7 @@ let App = () => {
       </header>
       <main>
         {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
+        {methodHelpStatus && <MethodHelpComponent cancelAction={OnMethodHelp}></MethodHelpComponent>}
         {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
         {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
         {hint_status && <HintComponent cancelAction={hintClick}></HintComponent>}
@@ -574,6 +584,7 @@ let App = () => {
             <StartButton canStartComputing={canStartComputing} startComputing={startComputing} />
             <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
             {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
+            {isTransitive && <TransitiveSolverMethodSwitcher OnMethodHelp={OnMethodHelp} transitiveMethod={transitiveMethod} changeTransitiveMethod={setTransitiveMethod} />}
           </div>
 
         </div>

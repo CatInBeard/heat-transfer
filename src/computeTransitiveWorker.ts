@@ -14,10 +14,11 @@ ctx.addEventListener("message", (event) => {
     let initialTemp = event.data.initialTemp
     let stepIncrement = event.data.stepIncrement
     let steps = event.data.steps
+    let method = event.data.method
 
     let result: number[][] = [];
     try {
-        result = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, callback, initialTemp, stepIncrement, steps);
+        result = computeTransitive(inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, callback, initialTemp, stepIncrement, steps, method);
     }
     catch (e) {
         postMessage({ action: "error", result: e });
