@@ -1,11 +1,11 @@
 {
   "files": {
     "main.css": "/heat-transfer/static/css/main.0280add2.css",
-    "main.js": "/heat-transfer/static/js/main.fcd64631.js",
-    "static/js/98.b7b1f85f.chunk.js": "/heat-transfer/static/js/98.b7b1f85f.chunk.js",
-    "static/js/949.a89d1037.chunk.js": "/heat-transfer/static/js/949.a89d1037.chunk.js",
-    "static/js/432.86f5223f.chunk.js": "/heat-transfer/static/js/432.86f5223f.chunk.js",
-    "static/js/51.cf2901f9.chunk.js": "/heat-transfer/static/js/51.cf2901f9.chunk.js",
+    "main.js": "/heat-transfer/static/js/main.815f873c.js",
+    "static/js/893.cdd4fb52.chunk.js": "/heat-transfer/static/js/893.cdd4fb52.chunk.js",
+    "static/js/193.6f8bb795.chunk.js": "/heat-transfer/static/js/193.6f8bb795.chunk.js",
+    "static/js/536.c57e7181.chunk.js": "/heat-transfer/static/js/536.c57e7181.chunk.js",
+    "static/js/155.6f47deb1.chunk.js": "/heat-transfer/static/js/155.6f47deb1.chunk.js",
     "fixtures/inp/6651-elem.inp": "/heat-transfer/fixtures/inp/6651-elem.inp",
     "static/media/bootstrap-icons.woff?": "/heat-transfer/static/media/bootstrap-icons.39795c0b4513de014cf8.woff",
     "fixtures/inp/1720-elem.inp": "/heat-transfer/fixtures/inp/1720-elem.inp",
@@ -17,14 +17,14 @@
     "fixtures/inp/13-elem.inp": "/heat-transfer/fixtures/inp/13-elem.inp",
     "index.html": "/heat-transfer/index.html",
     "main.0280add2.css.map": "/heat-transfer/static/css/main.0280add2.css.map",
-    "main.fcd64631.js.map": "/heat-transfer/static/js/main.fcd64631.js.map",
-    "98.b7b1f85f.chunk.js.map": "/heat-transfer/static/js/98.b7b1f85f.chunk.js.map",
-    "949.a89d1037.chunk.js.map": "/heat-transfer/static/js/949.a89d1037.chunk.js.map",
-    "432.86f5223f.chunk.js.map": "/heat-transfer/static/js/432.86f5223f.chunk.js.map",
-    "51.cf2901f9.chunk.js.map": "/heat-transfer/static/js/51.cf2901f9.chunk.js.map"
+    "main.815f873c.js.map": "/heat-transfer/static/js/main.815f873c.js.map",
+    "893.cdd4fb52.chunk.js.map": "/heat-transfer/static/js/893.cdd4fb52.chunk.js.map",
+    "193.6f8bb795.chunk.js.map": "/heat-transfer/static/js/193.6f8bb795.chunk.js.map",
+    "536.c57e7181.chunk.js.map": "/heat-transfer/static/js/536.c57e7181.chunk.js.map",
+    "155.6f47deb1.chunk.js.map": "/heat-transfer/static/js/155.6f47deb1.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.0280add2.css",
-    "static/js/main.fcd64631.js"
+    "static/js/main.815f873c.js"
   ]
 }
