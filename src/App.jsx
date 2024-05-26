@@ -38,6 +38,7 @@ import TransitiveSolverMethodSwitcher from './components/TransitiveSolverMethodS
 import MethodHelpComponent from './components/MethodHelpComponent.jsx';
 import PreStepTransitive from './components/PreStepTransitive.jsx';
 import PreStepHelpComponent from './components/PreStepHelpComponent.jsx';
+import { cloneDeep } from 'lodash';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -89,6 +90,7 @@ let App = () => {
 
   const [preStepIncrement, setPreStepIncrement] = useState(10000);
   const [preStepSteps, setPreStepSteps] = useState(5);
+  const [preStepCustomBC, setPreStepCustomBC] = useState([]);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -344,6 +346,7 @@ let App = () => {
         setNodesCount(inpData.problemData[0].nodes.length);
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
+        setPreStepCustomBC(cloneDeep(inpData.steps[0].boundaries.temperature))
         dispatch(setcomputingStatus({ status: "ready" }))
       }
       catch (error) {
@@ -392,6 +395,7 @@ let App = () => {
         let inpData = parseInpText(text);
         checkInpDataForHeatTransfer(inpData);
         dispatch(saveInpData({ data: inpData }));
+        setPreStepCustomBC(cloneDeep(inpData.steps[0].boundaries.temperature))
         setElementsCount(inpData.problemData[0].elements.length);
         setNodesCount(inpData.problemData[0].nodes.length);
         dispatch(setcomputingStatus({ status: "ready" }))
@@ -463,7 +467,7 @@ let App = () => {
 
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
 
-          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps, method: transitiveMethod, usePreStep: usePreStep, useAverageTemp: useAverageTemp, preStepSteps: preStepSteps, preStepIncrement: preStepIncrement });
+          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps, method: transitiveMethod, usePreStep: usePreStep, useAverageTemp: useAverageTemp, preStepSteps: preStepSteps, preStepIncrement: preStepIncrement, preStepBC:preStepCustomBC });
 
           transitiveWorker.onmessage = function (event) {
             if (event.data.action == "done") {
@@ -601,7 +605,7 @@ let App = () => {
             <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
             {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
             {isTransitive && <TransitiveSolverMethodSwitcher OnMethodHelp={OnMethodHelp} transitiveMethod={transitiveMethod} changeTransitiveMethod={setTransitiveMethod} />}
-            {isTransitive && <PreStepTransitive usePreStep={usePreStep} setUsePreStep={setUsePreStep} OnPreStepHelp={OnPreStepHelp} preStepIncrement={preStepIncrement} preStepSteps={preStepSteps} setPreStepSteps={setPreStepSteps} setPreStepIncrement={setPreStepIncrement} useAverageTemp={useAverageTemp} setUseAverageTemp={setUseAverageTemp} />}
+            {isTransitive && <PreStepTransitive usePreStep={usePreStep} setUsePreStep={setUsePreStep} OnPreStepHelp={OnPreStepHelp} preStepIncrement={preStepIncrement} preStepSteps={preStepSteps} setPreStepSteps={setPreStepSteps} setPreStepIncrement={setPreStepIncrement} useAverageTemp={useAverageTemp} setUseAverageTemp={setUseAverageTemp} preStepCustomBC={preStepCustomBC} setPreStepCustomBC={setPreStepCustomBC} onBlurBC={onBlurBC} onFocusBc={onFocusBc} />}
           </div>
 
         </div>

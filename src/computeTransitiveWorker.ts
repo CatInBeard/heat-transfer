@@ -39,6 +39,9 @@ ctx.addEventListener("message", (event) => {
                 return averageBC
             })
         }
+        else{
+            preStepBC = event.data.preStepBC
+        }
 
         try {
             preStepResult = computeTransitive(inpData, preStepBC, blocks_termal_conductivity, blocks_density, blocks_specific_heat, progress_callback_preStep, initialTemp, preStepIncrement, preStepSteps, "crank-nicolson");

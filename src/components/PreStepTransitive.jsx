@@ -1,7 +1,8 @@
 import cursor from "../style/cursor.module.css"
 import inputStyle from "../style/input.module.css"
+import { cloneDeep } from 'lodash';
 
-const PreStepTransitive = ({ usePreStep, setUsePreStep, preStepIncrement, setPreStepIncrement, preStepSteps, setPreStepSteps, OnPreStepHelp, useAverageTemp, setUseAverageTemp }) => {
+const PreStepTransitive = ({ usePreStep, setUsePreStep, preStepIncrement, setPreStepIncrement, preStepSteps, setPreStepSteps, OnPreStepHelp, useAverageTemp, setUseAverageTemp, preStepCustomBC, setPreStepCustomBC, onFocusBc, onBlurBC }) => {
 
   const togglePreStep = () => {
     setUsePreStep(!usePreStep)
@@ -14,7 +15,7 @@ const PreStepTransitive = ({ usePreStep, setUsePreStep, preStepIncrement, setPre
   const changeIncrement = (event) => {
     setPreStepIncrement(event.target.value)
   }
-  
+
   const changeSteps = (event) => {
     setPreStepSteps(event.target.value)
   }
@@ -48,8 +49,32 @@ const PreStepTransitive = ({ usePreStep, setUsePreStep, preStepIncrement, setPre
     </div>
   </>
 
+  const onBCTemperatureChange = (event) => {
+    const bcName = event.target.getAttribute('data-bc-name');
+    const array = cloneDeep(preStepCustomBC)
+    const index = array.findIndex((item) => item.name === bcName);
+    if (index !== -1) {
+      array[index].temperature = event.target.value;
+      setPreStepCustomBC(array)
+    }
+  }
+
   const BCPrestepSettings = <>
-  
+    {preStepCustomBC.map((boundary) => {
+      return <div className='p-2 form-group' key={boundary.name}>
+        <div className="row">
+          <div className='col'>
+            <label>{boundary.name}:</label>
+          </div>
+          <div className="col">
+            <input onFocus={onFocusBc} onBlur={onBlurBC} min={0} data-bc-name={boundary.name} value={boundary.temperature} onChange={onBCTemperatureChange} type={"number"} className={'form-control ' + (inputStyle.inputMinSizeLarge)}></input>
+          </div>
+          <div className="col">
+            &deg;C
+          </div>
+        </div>
+      </div>
+    })}
   </>
 
   return <div className="row">
