@@ -39,6 +39,8 @@ import MethodHelpComponent from './components/MethodHelpComponent.jsx';
 import PreStepTransitive from './components/PreStepTransitive.jsx';
 import PreStepHelpComponent from './components/PreStepHelpComponent.jsx';
 import { cloneDeep } from 'lodash';
+import ExportButton from './components/ExportButton.jsx';
+import DataExportDialog from './components/DataExportDialog.jsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -91,6 +93,8 @@ let App = () => {
   const [preStepIncrement, setPreStepIncrement] = useState(10000);
   const [preStepSteps, setPreStepSteps] = useState(5);
   const [preStepCustomBC, setPreStepCustomBC] = useState([]);
+
+  const [exportStatus, setExportStatus] = useState(false);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -187,6 +191,10 @@ let App = () => {
 
   const onBlurBC = () => {
     setBCHilight(false)
+  }
+
+  const toggleExportDialog = () => {
+    setExportStatus(!exportStatus)
   }
 
   const uploadCSV = (file) => {
@@ -475,7 +483,7 @@ let App = () => {
               temperatures = temperatureFrames[temperatureFrames.length - 1];
               const end = performance.now();
               console.log("Solved in " + (end - start).toString() + " milliseconds.");
-
+              console.log(JSON.stringify(temperatureFrames))
               setPreDrawFrames(temperatureFrames)
 
               let { min, max } = findMinMax(temperatureFrames)
@@ -522,6 +530,7 @@ let App = () => {
               console.log("Solved in " + (end - start).toString() + " milliseconds.");
               dispatch(setNodesTemperature({ nodesTemperature: temperatures }));
               dispatch(setcomputingStatus({ status: "computed" }))
+              setPreDrawFrames([temperatures])
               steadyWorker.terminate();
             }
             else if (event.data.action == "error") {
@@ -544,6 +553,7 @@ let App = () => {
   const canChangeSectionsSettings = computingStatus != "waiting" && inpData !== null;
   const canChangeBC = computingStatus != "waiting" && inpData !== null;
   const canChangeGridVisibility = Boolean(Mesh);
+  const canExport = computingStatus === "computed"
 
 
   const onInitialTChange = (event) => {
@@ -606,6 +616,8 @@ let App = () => {
             {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
             {isTransitive && <TransitiveSolverMethodSwitcher OnMethodHelp={OnMethodHelp} transitiveMethod={transitiveMethod} changeTransitiveMethod={setTransitiveMethod} />}
             {isTransitive && <PreStepTransitive usePreStep={usePreStep} setUsePreStep={setUsePreStep} OnPreStepHelp={OnPreStepHelp} preStepIncrement={preStepIncrement} preStepSteps={preStepSteps} setPreStepSteps={setPreStepSteps} setPreStepIncrement={setPreStepIncrement} useAverageTemp={useAverageTemp} setUseAverageTemp={setUseAverageTemp} preStepCustomBC={preStepCustomBC} setPreStepCustomBC={setPreStepCustomBC} onBlurBC={onBlurBC} onFocusBc={onFocusBc} />}
+            <ExportButton canExport={canExport} openExport={toggleExportDialog}/>
+            {exportStatus && <DataExportDialog cancelAction={toggleExportDialog} temperatures={preDrawFrames} increment={stepIncrement}/>}
           </div>
 
         </div>
