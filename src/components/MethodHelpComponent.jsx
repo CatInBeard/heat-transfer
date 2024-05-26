@@ -1,7 +1,7 @@
 import ClosablePopupContainer from "./closablePopup/ClosablePopup";
 
 let MethodHelpComponent = ({ cancelAction }) => {
-  return <ClosablePopupContainer focusOnClose={true} cancelAction={cancelAction} headerText="Math expression hint">
+  return <ClosablePopupContainer focusOnClose={true} cancelAction={cancelAction} headerText="Method select hint">
 
     Two schemes are currently supported:
     <ul>

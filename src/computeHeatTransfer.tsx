@@ -3,8 +3,26 @@ import { Nset, Lset, Section, TemperatureBC, TemperatureBCTransitive } from "./i
 import { evaluateMathExpression } from "./mathExpression"
 import { cloneDeep } from 'lodash';
 
+const calculateAverageBC = (
+    expression: string,
+    startTime: number,
+    endTime: number,
+    interval: number = 0.01
+): number => {
+    let sum = 0;
+    let count = 0;
 
-const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback, initialTemp = 0, timeStep = 0.1, steps = 500, method = "forward") => {
+    for (let t = startTime; t <= endTime; t += interval) {
+        const value = evaluateMathExpression(expression.toString(), t);
+        sum += value;
+        count++;
+    }
+
+    return sum / count;
+};
+
+
+const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, blocks_density, blocks_capacity, progress_callback, initialTemp = 0, timeStep = 0.1, steps = 500, method = "forward", initialTempArray = null) => {
 
 
     let freq = 1 / timeStep;
@@ -32,8 +50,13 @@ const computeTransitive = (inpData, temperature_BC, blocks_termal_conductivity, 
     let temperaturePrevStep: number[] = [];
     let temperatureCurrentStep: number[] = [];
 
-    for (let i = 0; i < F.length; i++) {
-        temperaturePrevStep.push(initialTemp);
+    if (initialTempArray === null) {
+        for (let i = 0; i < F.length; i++) {
+            temperaturePrevStep.push(initialTemp);
+        }
+    }
+    else {
+        temperaturePrevStep = initialTempArray;
     }
     temperaturePrevStep = fixTemperatureFromBC(temperaturePrevStep, inpData, temperature_BC)
 
@@ -571,4 +594,4 @@ const fixTemperatureFromBC = (temperature: number[], inpData, temperature_BC, t:
 }
 
 
-export { computeSteadyState, computeTransitive }
+export { computeSteadyState, computeTransitive, calculateAverageBC }

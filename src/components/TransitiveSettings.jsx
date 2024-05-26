@@ -1,6 +1,6 @@
 import inputStyle from "../style/input.module.css"
 
-const TransitiveSettings = ({initialTemp, onInitialTChange, stepIncrement, onStepIncrementChange, steps, onStepsChange}) => {
+const TransitiveSettings = ({initialTemp, onInitialTChange, stepIncrement, onStepIncrementChange, steps, onStepsChange, usePreStep}) => {
     return <>
         <div className='p-2 form-group' key="transitiveSettings">
             <div className="row">
@@ -9,7 +9,7 @@ const TransitiveSettings = ({initialTemp, onInitialTChange, stepIncrement, onSte
                 </div>
             </div>
         </div>
-        <div className='p-2 form-group' key="initalT">
+        {!usePreStep && <div className='p-2 form-group' key="initalT">
             <div className="row">
                 <div className='col'>
                     <label>Initial Temp:</label>
@@ -21,7 +21,7 @@ const TransitiveSettings = ({initialTemp, onInitialTChange, stepIncrement, onSte
                     &deg;C
                 </div>
             </div>
-        </div>
+        </div> }
 
         <div className='p-2 form-group' key="stepIncrement">
             <div className="row">

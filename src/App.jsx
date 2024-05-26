@@ -36,6 +36,8 @@ import SectionSettings from './components/SectionSettings.jsx';
 import NeedUploadHint from './components/NeedUploadHint.jsx';
 import TransitiveSolverMethodSwitcher from './components/TransitiveSolverMethodSwitch.jsx';
 import MethodHelpComponent from './components/MethodHelpComponent.jsx';
+import PreStepTransitive from './components/PreStepTransitive.jsx';
+import PreStepHelpComponent from './components/PreStepHelpComponent.jsx';
 
 let App = () => {
   const dispatch = useDispatch();
@@ -81,6 +83,12 @@ let App = () => {
 
   const [transitiveMethod, setTransitiveMethod] = useState("forward")
   const [methodHelpStatus, setMethodHelpStatus] = useState(false);
+  const [preStepHelpStatus, setPreStepHelpStatus] = useState(false);
+  const [usePreStep, setUsePreStep] = useState(false);
+  const [useAverageTemp, setUseAverageTemp] = useState(true);
+
+  const [preStepIncrement, setPreStepIncrement] = useState(10000);
+  const [preStepSteps, setPreStepSteps] = useState(5);
 
   const canvasRef = useRef(null);
   const canvasDiv = useRef(null);
@@ -146,6 +154,10 @@ let App = () => {
 
   const OnMethodHelp = () => {
     setMethodHelpStatus(!methodHelpStatus)
+  }
+
+  const OnPreStepHelp = () => {
+    setPreStepHelpStatus(!preStepHelpStatus)
   }
 
   const openCSVUpload = (event) => {
@@ -451,8 +463,7 @@ let App = () => {
 
           const transitiveWorker = new Worker(new URL("./computeTransitiveWorker.ts", import.meta.url));
 
-
-          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps, method: transitiveMethod });
+          transitiveWorker.postMessage({ inpData: inpData, temperature_BC: temperature_BC, blocks_termal_conductivity: blocks_termal_conductivity, blocks_density: blocks_density, blocks_specific_heat: blocks_specific_heat, initialTemp: initialTemp, stepIncrement: stepIncrement, steps: steps, method: transitiveMethod, usePreStep: usePreStep, useAverageTemp: useAverageTemp, preStepSteps: preStepSteps, preStepIncrement: preStepIncrement });
 
           transitiveWorker.onmessage = function (event) {
             if (event.data.action == "done") {
@@ -480,6 +491,10 @@ let App = () => {
               dispatch(setNodesTemperature({ nodesTemperature: event.data.temp }));
               console.log("progress:" + progress.toFixed(2) + "%")
               setTransitiveProgress(progress.toFixed(2))
+            }
+            else if (event.data.action == "progress_preStep") {
+              let progress = event.data.result;
+              console.log("Pre-step progress:" + progress.toFixed(2) + "%")
             }
             else if (event.data.action == "error") {
               let error = event.data.result;
@@ -546,6 +561,7 @@ let App = () => {
       <main>
         {expressionHelpStatus && <ExpressionHelpComponent cancelAction={OnExpressionHelp}></ExpressionHelpComponent>}
         {methodHelpStatus && <MethodHelpComponent cancelAction={OnMethodHelp}></MethodHelpComponent>}
+        {preStepHelpStatus && <PreStepHelpComponent cancelAction={OnPreStepHelp} />}
         {uploadCSVTableBCName && <UploadCsvComponent libraryAction={toggle_bc_librabry} confirmAction={uploadCSV} cancelAction={closeCsvUpload} />}
         {csvTableInsertBCName && <InsertCsvTableComponent confirmAction={insertTable} cancelAction={closeCsvTableInsert} initialData={getBCInitialData()} />}
         {hint_status && <HintComponent cancelAction={hintClick}></HintComponent>}
@@ -572,7 +588,7 @@ let App = () => {
               Change temperature
             </div>
             {canChangeBC && <BCEditor temperature_BC={temperature_BC} useCSVTable={useCSVTable} onFocusBc={onFocusBc} onBlurBC={onBlurBC} onBCTemperatureChange={onBCTemperatureChange} openCSVUpload={openCSVUpload} openCsvTableInsert={openCsvTableInsert} isTransitive={isTransitive} OnExpressionHelp={OnExpressionHelp} />}
-            {isTransitive && <TransitiveSettings initialTemp={initialTemp} onInitialTChange={onInitialTChange} stepIncrement={stepIncrement} onStepIncrementChange={onStepIncrementChange} steps={steps} onStepsChange={onStepsChange} />}
+            {isTransitive && <TransitiveSettings usePreStep={usePreStep} initialTemp={initialTemp} onInitialTChange={onInitialTChange} stepIncrement={stepIncrement} onStepIncrementChange={onStepIncrementChange} steps={steps} onStepsChange={onStepsChange} />}
           </div>
           <div className='p-2 d-flex flex-column'>
             <InpLoaderButton uploadClick={uploadClick} hintClick={hintClick} />
@@ -585,12 +601,13 @@ let App = () => {
             <GridSettingsButton canChangeGridVisibility={canChangeGridVisibility} toggleGrid={toggleGrid} gridVisible={gridVisible} />
             {isTransitive && <TransitiveTableSwitcher useCSVTable={useCSVTable} changeUseCsvTable={changeUseCsvTable} />}
             {isTransitive && <TransitiveSolverMethodSwitcher OnMethodHelp={OnMethodHelp} transitiveMethod={transitiveMethod} changeTransitiveMethod={setTransitiveMethod} />}
+            {isTransitive && <PreStepTransitive usePreStep={usePreStep} setUsePreStep={setUsePreStep} OnPreStepHelp={OnPreStepHelp} preStepIncrement={preStepIncrement} preStepSteps={preStepSteps} setPreStepSteps={setPreStepSteps} setPreStepIncrement={setPreStepIncrement} useAverageTemp={useAverageTemp} setUseAverageTemp={setUseAverageTemp} />}
           </div>
 
         </div>
       </main>
       <footer className='border-top p-2'>
-        <a className='text-muted' href='https://github.com/CatInBeard/heat-transfer/'>Get source code</a>
+        <a className='text-muted' target="_blank" href='https://github.com/CatInBeard/heat-transfer/'>Get source code</a>
       </footer>
     </div>
   );
