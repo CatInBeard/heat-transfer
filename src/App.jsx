@@ -617,7 +617,7 @@ let App = () => {
             {isTransitive && <TransitiveSolverMethodSwitcher OnMethodHelp={OnMethodHelp} transitiveMethod={transitiveMethod} changeTransitiveMethod={setTransitiveMethod} />}
             {isTransitive && <PreStepTransitive usePreStep={usePreStep} setUsePreStep={setUsePreStep} OnPreStepHelp={OnPreStepHelp} preStepIncrement={preStepIncrement} preStepSteps={preStepSteps} setPreStepSteps={setPreStepSteps} setPreStepIncrement={setPreStepIncrement} useAverageTemp={useAverageTemp} setUseAverageTemp={setUseAverageTemp} preStepCustomBC={preStepCustomBC} setPreStepCustomBC={setPreStepCustomBC} onBlurBC={onBlurBC} onFocusBc={onFocusBc} />}
             <ExportButton canExport={canExport} openExport={toggleExportDialog}/>
-            {exportStatus && <DataExportDialog cancelAction={toggleExportDialog} temperatures={preDrawFrames} increment={stepIncrement}/>}
+            {exportStatus && <DataExportDialog inpData={inpData} cancelAction={toggleExportDialog} temperatures={preDrawFrames} increment={stepIncrement}/>}
           </div>
 
         </div>

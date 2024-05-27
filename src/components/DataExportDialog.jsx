@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { downloadTemperatureCsv } from '../export.tsx'
+import { downloadTemperatureCsv, downloadTemperatureVtk } from '../export.tsx'
 import ClosablePopupContainer from './closablePopup/ClosablePopup.jsx';
 
-const DataExportDialog = ({ cancelAction, temperatures, increment = 1 }) => {
+const DataExportDialog = ({ cancelAction, temperatures,inpData, increment = 1 }) => {
 
     const options = {
         'csv': 'csv',
-        // 'vtk': 'vtk'
+        'vtk': 'vtk'
       }
 
     const [isDownloading, setIsDownloading] = useState(false)
@@ -19,7 +19,13 @@ const DataExportDialog = ({ cancelAction, temperatures, increment = 1 }) => {
     }
 
     const downloadData = () => {
-        downloadTemperatureCsv(temperatures, increment)
+        switch(fileType){
+            case "vtk":
+                downloadTemperatureVtk(temperatures, inpData)
+                break;
+            default:
+                downloadTemperatureCsv(temperatures, increment)
+        }
         setIsDownloading(true)
         setTimeout(() => {
             setIsDownloading(false)
