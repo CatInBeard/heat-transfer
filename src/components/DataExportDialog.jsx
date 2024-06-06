@@ -24,7 +24,7 @@ const DataExportDialog = ({ cancelAction, temperatures,inpData, increment = 1 })
                 downloadTemperatureVtk(temperatures, inpData)
                 break;
             default:
-                downloadTemperatureCsv(temperatures, increment)
+                downloadTemperatureCsv(temperatures, parseFloat(increment))
         }
         setIsDownloading(true)
         setTimeout(() => {

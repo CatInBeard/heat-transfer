@@ -4,8 +4,8 @@ import JSZip from "jszip";
 type FileDataMap = Record<string, string>;
 
 const temperatureToCsv = (temperatures: number[][], increment: number = 1): string => {
-    let csv = "step,time,node,temperature\n";
-    let time = 0;
+    let csv: string = "step,time,node,temperature\n";
+    let time: number = 0;
 
     for (let i = 0; i < temperatures.length; i++) {
         for (let j = 0; j < temperatures[i].length; j++) {
@@ -70,7 +70,7 @@ const createVtkSeties = (num: number): string => {
     let files = [];
     for (let i = 0; i < num; i++) {
         files.push({
-            "name": "temp"+i+".vtk",
+            "name": "temp" + i + ".vtk",
             "time": i
         })
     }
