@@ -35,7 +35,7 @@ const SectionSettings = ({inpData, blocksVisibility, blocks_termal_conductivity,
                 <input data-section-name={section.name} min={0} value={block_specific_heat} onChange={onBlockSpecificHeatChange} type='number' className={'form-control ' + inputStyle.inputMinSizeLarge}></input>
               </div>
               <div className='col'>
-                <label>J/°С</label>
+                <label>J/kg°С</label>
               </div>
             </div>
           </div>
